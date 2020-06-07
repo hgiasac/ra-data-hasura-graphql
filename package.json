@@ -30,7 +30,7 @@
         "build": "webpack --mode production",
         "compile": "npm run clean && tsc",
         "clean": "rm -rf dist",
-        "prepublish": "npm run compile",
+        "prepare": "npm run compile",
         "lint": "eslint --ext .js,.ts src"
     },
     "dependencies": {
