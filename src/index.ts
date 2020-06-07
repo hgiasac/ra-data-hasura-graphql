@@ -1,5 +1,5 @@
 import merge from "lodash/merge";
-import buildDataProvider, { GraphQLProviderOptions } from "ra-data-graphql";
+import buildDataProvider, { GraphQLProviderOptions } from "./ra-data-graphql";
 import {
   GET_ONE,
   GET_LIST,
@@ -48,6 +48,4 @@ const defaultOptions: Partial<GraphQLProviderOptions> = {
 export default <Options extends Record<string, any> = Record<string, any>>(
   options: Options & GraphQLProviderOptions<Options>
 ): Promise<DataProvider> =>
-  buildDataProvider(merge({}, defaultOptions, options)).then(
-    (dataProvider) => (fetchType, resource, params) => dataProvider(fetchType, resource, params)
-  );
+  buildDataProvider(merge({}, defaultOptions, options));

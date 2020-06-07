@@ -7,10 +7,9 @@ import {
   UPDATE,
   DELETE,
   UPDATE_MANY,
-  DELETE_MANY,
-  FetchType
+  DELETE_MANY
 } from "ra-core";
-import { IntrospectedSchema } from "ra-data-graphql";
+import { IntrospectedSchema, FetchType } from "./ra-data-graphql";
 import { HasuraGraphQLResponse } from "./utils";
 
 const sanitizeResource = (data = {}): Record<string, any> => {

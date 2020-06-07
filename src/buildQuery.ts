@@ -1,8 +1,7 @@
 import buildVariables from "./buildVariables";
 import buildGqlQuery, { BuildGqlQueryImpl } from "./buildGqlQuery";
 import getResponseParser from "./getResponseParser";
-import { IntrospectedSchema } from "ra-data-graphql";
-import { FetchType } from "ra-core";
+import { IntrospectedSchema, FetchType } from "./ra-data-graphql";
 
 const buildQueryFactory = (
   buildVariablesImpl,

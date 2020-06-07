@@ -7,8 +7,7 @@ import {
   CREATE,
   UPDATE,
   UPDATE_MANY,
-  DELETE_MANY,
-  FetchType
+  DELETE_MANY
 } from "ra-core";
 import {
   TypeKind,
@@ -24,7 +23,7 @@ import {
 } from "graphql";
 import * as gqlTypes from "graphql-ast-types-browser";
 import { isList, isRequired, getFinalType } from "./utils";
-import { IntrospectedSchema } from "ra-data-graphql";
+import { IntrospectedSchema, FetchType } from "./ra-data-graphql";
 
 export const buildFragments = (introspectionResults: IntrospectedSchema) =>
   (possibleTypes: readonly IntrospectionTypeRef[]): readonly InlineFragmentNode[] =>

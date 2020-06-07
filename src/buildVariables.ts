@@ -11,12 +11,11 @@ import {
   CREATE,
   UPDATE,
   UPDATE_MANY,
-  DELETE_MANY,
-  FetchType
+  DELETE_MANY
 } from "ra-core";
 
 import { getFinalType } from "./utils";
-import { IntrospectedSchema } from "ra-data-graphql";
+import { IntrospectedSchema, FetchType } from "./ra-data-graphql";
 import { IntrospectionField } from "graphql";
 
 export type BuildVariablesHandler<
