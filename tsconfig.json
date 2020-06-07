@@ -15,8 +15,7 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "sourceMap": true,
-    "outDir": "dist",
-    "types": []
+    "outDir": "lib"
   },
   "formatCodeOptions": {
     "indentSize": 2,
