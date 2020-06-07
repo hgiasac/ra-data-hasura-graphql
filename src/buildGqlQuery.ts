@@ -56,7 +56,7 @@ export const buildFields: FieldsBuilder = (type) =>
       return acc;
     }
 
-    if (type.kind !== TypeKind.OBJECT && type.kind !== TypeKind.INTERFACE) {
+    if (finalType.kind !== TypeKind.OBJECT && finalType.kind !== TypeKind.INTERFACE) {
       return [...acc, gqlTypes.field(gqlTypes.name(field.name))];
     }
 
