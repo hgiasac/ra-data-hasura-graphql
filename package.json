@@ -26,7 +26,8 @@
     ],
     "license": "MIT",
     "scripts": {
-        "build": "webpack --mode production"
+        "build": "webpack --mode production",
+        "prepack": "npm run build"
     },
     "dependencies": {
         "graphql-ast-types-browser": "~1.0.2",

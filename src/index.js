@@ -1,5 +1,5 @@
 import merge from 'lodash/merge';
-import buildDataProvider from 'ra-data-graphql';
+import buildDataProvider from './ra-data-graphql';
 import {
     GET_ONE,
     GET_LIST,
