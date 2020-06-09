@@ -99,15 +99,37 @@ const buildGetListVariables: VariablesBuilder<Record<string, any>, GetListVariab
     return { _and: filters };
   };
 
+  const getOrderBy = (): Record<string, string> => {
+    if (!params.sort || !Object.keys(params.sort).length) {
+      return undefined;
+    }
+
+    const orderValue = params.sort.order.toLowerCase();
+    if (params.sort !== "id") {
+      return {
+        [params.sort.field]: orderValue
+      };
+    }
+    if (primaryKeys.length <= 1) {
+      return {
+        [primaryKeys[0] || "id"]: orderValue
+      };
+    }
+
+    // sort composite keys
+    return primaryKeys.reduce((acc, key) => ({
+      ...acc,
+      [key]: orderValue
+    }), {});
+  };
+
   return {
     where: filterFn(),
     ...(params.pagination ? {} : {
       limit: params.pagination.perPage,
       offset: (params.pagination.page - 1) * params.pagination.perPage
     }),
-    order_by: params.sort ? {
-      [params.sort.field]: params.sort.order.toLowerCase()
-    } : undefined
+    order_by: getOrderBy()
   };
 };
 
