@@ -29,24 +29,29 @@ export const getFinalType = (type: IntrospectionTypeRef): IntrospectionNamedType
 };
 
 export const buildPrimaryKeyExp = (
-  ids: readonly (string | number)[],
+  data: readonly Record<string, any>[],
   primaryKeys?: readonly string[]
-): readonly Record<string, any>[] => {
+): Record<string, any> => {
 
+  if (!data || !data.length) {
+    throw new Error("Input data is empty. Cannot build primary key expression");
+  }
   if (primaryKeys.length <= 1) {
     const key = primaryKeys.length ? primaryKeys[0] : "id";
 
-    return [{ [key]: ids.length === 1 ? { _eq: ids[0] } : { _in: ids } }];
+    return {
+      [key]: data.length === 1
+        ? { _eq: data[0][key] }
+        : { _in: data.map((d) => d[key]) }
+    };
   }
 
-  return ids.map((id) => {
-    const idObject = JSON.parse(id as string);
-
-    return primaryKeys.reduce((acc, key) => ({
+  return {
+    _and: data.map((d) => primaryKeys.reduce((acc, key) => ({
       ...acc,
       [key]: {
-        _eq: idObject[key]
+        _eq: d[key]
       }
-    }), {});
-  });
+    }), {}))
+  };
 };

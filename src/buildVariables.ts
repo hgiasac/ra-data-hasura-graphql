@@ -16,7 +16,6 @@ import {
 import { IntrospectedSchema, FetchType } from "./ra-data-graphql";
 import { IntrospectionField } from "graphql";
 import { ResourceOptions } from "./types";
-import { buildPrimaryKeyExp } from "./utils";
 
 export type BuildVariablesHandler<
   P extends Record<string, any> = Record<string, any>,
@@ -41,6 +40,25 @@ type GetListVariables = {
   order_by?: Record<string, "asc" | "desc">
 };
 
+const getPrimaryKeyExp = (ids: (string | number)[], primaryKeys?: readonly string[]): Record<string, any>[] => {
+
+  if (primaryKeys.length <= 1) {
+    const key = primaryKeys.length ? primaryKeys[0] : "id";
+
+    return [{ [key]: ids.length === 1 ? { _eq: ids[0] } : { _in: ids } }];
+  }
+
+  return ids.map((id) => {
+    const idObject = JSON.parse(id as string);
+
+    return primaryKeys.reduce((acc, key) => ({
+      ...acc,
+      [key]: {
+        _eq: idObject[key]
+      }
+    }), {});
+  });
+};
 const buildGetListVariables: VariablesBuilder<Record<string, any>, GetListVariables> = () => (
   _resource,
   _aorFetchType,
@@ -64,7 +82,7 @@ const buildGetListVariables: VariablesBuilder<Record<string, any>, GetListVariab
       }
 
       if (key === "ids" && Array.isArray(filterObj.ids)) {
-        return acc.concat(buildPrimaryKeyExp(filters.ids, primaryKeys));
+        return acc.concat(getPrimaryKeyExp(filters.ids, primaryKeys));
       }
 
       switch (typeof val) {
@@ -202,14 +220,14 @@ const defaultBuildVariables: BuildVariablesImpl = (introspectionResults) => (
     case DELETE_MANY:
       return {
         where: {
-          _and: buildPrimaryKeyExp(params.ids, primaryKeys)
+          _and: getPrimaryKeyExp(params.ids, primaryKeys)
         }
       };
 
     case GET_ONE:
       return {
         where: {
-          _and: buildPrimaryKeyExp(params.ids, primaryKeys)
+          _and: getPrimaryKeyExp(params.ids, primaryKeys)
         },
         limit: 1
       };
@@ -217,7 +235,7 @@ const defaultBuildVariables: BuildVariablesImpl = (introspectionResults) => (
     case DELETE:
       return {
         where: {
-          _and: buildPrimaryKeyExp(params.ids, primaryKeys)
+          _and: getPrimaryKeyExp(params.ids, primaryKeys)
         }
       };
     case CREATE:
@@ -241,7 +259,7 @@ const defaultBuildVariables: BuildVariablesImpl = (introspectionResults) => (
           resourceOptions
         ),
         where: {
-          _and: buildPrimaryKeyExp(params.ids, primaryKeys)
+          _and: getPrimaryKeyExp(params.ids, primaryKeys)
         }
       };
 
@@ -255,7 +273,7 @@ const defaultBuildVariables: BuildVariablesImpl = (introspectionResults) => (
           resourceOptions
         ),
         where: {
-          _and: buildPrimaryKeyExp(params.ids, primaryKeys)
+          _and: getPrimaryKeyExp(params.ids, primaryKeys)
         }
       };
     default:
