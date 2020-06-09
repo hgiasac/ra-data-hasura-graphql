@@ -105,7 +105,7 @@ const buildGetListVariables: VariablesBuilder<Record<string, any>, GetListVariab
     }
 
     const orderValue = params.sort.order.toLowerCase();
-    if (params.sort !== "id") {
+    if (params.sort.field !== "id") {
       return {
         [params.sort.field]: orderValue
       };
