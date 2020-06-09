@@ -19,7 +19,7 @@ const buildQueryFactory = (
   buildVariablesImpl: BuildVariablesImpl,
   buildGqlQueryImpl: BuildGqlQueryImpl,
   getResponseParserImpl: ResponseParserGetter
-) => (resourceOptions: ResourceOptions) => (introspectionResults: IntrospectedSchema) => {
+) => (resourceOptions: ResourceOptions = {}) => (introspectionResults: IntrospectedSchema) => {
   const knownResources = introspectionResults.resources.map((r) => r.type.name);
 
   return (aorFetchType: FetchType, resourceName: string, params) => {

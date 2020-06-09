@@ -66,7 +66,7 @@ const buildGetListVariables: VariablesBuilder<Record<string, any>, GetListVariab
   _queryType,
   resourceOptions
 ) => {
-  const { filterExps, primaryKeys = [] } = resourceOptions || {};
+  const { filterExps, primaryKeys = [] } = resourceOptions;
   const { filter: filterObj = {}, customFilters = [] } = params;
 
   const filterFn = (): Record<string, any> => {

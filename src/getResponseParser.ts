@@ -67,7 +67,7 @@ const parseResponse: ResponseParserGetter = () =>
   (aorFetchType: FetchType, resourceName: string, resourceOptions: ResourceOptions) =>
     (res: HasuraGraphQLResponse): Record<string, any>  => {
       const response = res.data;
-      const primaryKeys = resourceOptions.primaryKeys || [];
+      const { primaryKeys = [] } = resourceOptions;
       // react-admin use id as primary key as default. Most of features don't work without id
       // in this case, to support non-id primary key column, or composite primary keys
       // the work around is adding `id` field with primary key value
