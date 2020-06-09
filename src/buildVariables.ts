@@ -99,7 +99,7 @@ const buildGetListVariables: VariablesBuilder<Record<string, any>, GetListVariab
     return { _and: filters };
   };
 
-  const getOrderBy = (): Record<string, string> => {
+  const getOrderBy = (): Record<string, "asc" | "desc"> => {
     if (!params.sort || !Object.keys(params.sort).length) {
       return undefined;
     }
