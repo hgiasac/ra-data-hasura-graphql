@@ -27,3 +27,26 @@ export const getFinalType = (type: IntrospectionTypeRef): IntrospectionNamedType
 
   return type;
 };
+
+export const buildPrimaryKeyExp = (
+  ids: readonly (string | number)[],
+  primaryKeys?: readonly string[]
+): readonly Record<string, any>[] => {
+
+  if (primaryKeys.length <= 1) {
+    const key = primaryKeys.length ? primaryKeys[0] : "id";
+
+    return [{ [key]: ids.length === 1 ? { _eq: ids[0] } : { _in: ids } }];
+  }
+
+  return ids.map((id) => {
+    const idObject = JSON.parse(id as string);
+
+    return primaryKeys.reduce((acc, key) => ({
+      ...acc,
+      [key]: {
+        _eq: idObject[key]
+      }
+    }), {});
+  });
+};

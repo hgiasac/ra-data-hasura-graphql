@@ -17,6 +17,7 @@ import getResponseParser from "./getResponseParser";
 import buildVariables from "./buildVariables";
 import { IntrospectionType } from "graphql";
 import { HasuraGraphQLProviderOptions } from "./types";
+import { buildPrimaryKeyExp } from "./utils";
 export {
   buildQuery,
   buildGqlQuery,
@@ -25,7 +26,8 @@ export {
   buildFields,
   buildMetaArgs,
   buildArgs,
-  buildApolloArgs
+  buildApolloArgs,
+  buildPrimaryKeyExp
 };
 
 export * from "./types";
