@@ -14,6 +14,7 @@ type FilterExpOptions
   | FilterFunctionExpOption;
 
 export type ResourceOptions = {
+  readonly alias?: string
   readonly primaryKeys?: readonly string[]
   readonly filterExps?: FilterExpOptions
 };

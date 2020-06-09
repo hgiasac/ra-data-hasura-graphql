@@ -19,25 +19,28 @@ const buildQueryFactory = (
   buildVariablesImpl: BuildVariablesImpl,
   buildGqlQueryImpl: BuildGqlQueryImpl,
   getResponseParserImpl: ResponseParserGetter
-) => (resourceOptions: ResourceOptionsMap = {}) => (introspectionResults: IntrospectedSchema) => {
+) => (resourceOptionsM: ResourceOptionsMap = {}) => (introspectionResults: IntrospectedSchema) => {
   const knownResources = introspectionResults.resources.map((r) => r.type.name);
 
   return (aorFetchType: FetchType, resourceName: string, params) => {
+    const resourceOptions = resourceOptionsM[resourceName] || {};
+    const resourceAlias = resourceOptions.alias || resourceName;
+
     const resource = introspectionResults.resources.find(
-      (r) => r.type.name === resourceName
+      (r) => r.type.name === resourceAlias
     );
-    const resourceOption = resourceOptions[resourceName];
 
     if (!resource) {
+      const preMessage =
+        `Unknown resource '${resourceName}'${resourceOptions.alias ? `, alias of '${resourceAlias}'` : ""}. `;
       if (knownResources.length) {
         throw new Error(
-          `Unknown resource ${resourceName}. ` +
-          "Make sure it has been declared on your server side schema, or the user has resource permission. " +
-          `Known resources are ${knownResources.join(", ")}`
+          `${preMessage}Make sure it has been declared on your server side schema, or the user has resource permission.`
+          + ` Known resources are ${knownResources.join(", ")}`
         );
       } else {
         throw new Error(
-          `Unknown resource ${resourceName}. No resources were found. ` +
+          `${preMessage}No resources were found. ` +
           // eslint-disable-next-line max-len
           "Make sure it has been declared on your server side schema, or the user has resource permission."
         );
@@ -78,7 +81,7 @@ const buildQueryFactory = (
       aorFetchType,
       params,
       queryType,
-      resourceOption
+      resourceOptions
     );
     const query = buildGqlQueryImpl(introspectionResults)(
       resource,
@@ -89,7 +92,7 @@ const buildQueryFactory = (
     const parseResponse = getResponseParserImpl(introspectionResults)(
       aorFetchType,
       resourceName,
-      resourceOption
+      resourceOptions
     );
 
     return {
