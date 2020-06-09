@@ -2,7 +2,7 @@ import buildVariables, { BuildVariablesImpl } from "./buildVariables";
 import buildGqlQuery, { BuildGqlQueryImpl } from "./buildGqlQuery";
 import getResponseParser, { ResponseParserGetter } from "./getResponseParser";
 import { IntrospectedSchema, FetchType } from "./ra-data-graphql";
-import { ResourceOptions } from "./types";
+import { ResourceOptionsMap } from "./types";
 import {
   GET_LIST,
   GET_ONE,
@@ -19,13 +19,14 @@ const buildQueryFactory = (
   buildVariablesImpl: BuildVariablesImpl,
   buildGqlQueryImpl: BuildGqlQueryImpl,
   getResponseParserImpl: ResponseParserGetter
-) => (resourceOptions: ResourceOptions = {}) => (introspectionResults: IntrospectedSchema) => {
+) => (resourceOptions: ResourceOptionsMap = {}) => (introspectionResults: IntrospectedSchema) => {
   const knownResources = introspectionResults.resources.map((r) => r.type.name);
 
   return (aorFetchType: FetchType, resourceName: string, params) => {
     const resource = introspectionResults.resources.find(
       (r) => r.type.name === resourceName
     );
+    const resourceOption = resourceOptions[resourceName];
 
     if (!resource) {
       if (knownResources.length) {
@@ -77,7 +78,7 @@ const buildQueryFactory = (
       aorFetchType,
       params,
       queryType,
-      resourceOptions
+      resourceOption
     );
     const query = buildGqlQueryImpl(introspectionResults)(
       resource,
@@ -88,7 +89,7 @@ const buildQueryFactory = (
     const parseResponse = getResponseParserImpl(introspectionResults)(
       aorFetchType,
       resourceName,
-      resourceOptions
+      resourceOption
     );
 
     return {

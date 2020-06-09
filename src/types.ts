@@ -18,7 +18,9 @@ export type ResourceOptions = {
   readonly filterExps?: FilterExpOptions
 };
 
+export type ResourceOptionsMap = Record<string, ResourceOptions>;
+
 export type HasuraGraphQLProviderOptions =
   GraphQLProviderOptions & {
-    readonly resourceOptions?: Record<string, ResourceOptions>
+    readonly resourceOptions?: ResourceOptionsMap
   };
