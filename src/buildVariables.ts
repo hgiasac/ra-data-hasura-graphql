@@ -209,7 +209,7 @@ const defaultBuildVariables: BuildVariablesImpl = (introspectionResults) => (
     case GET_ONE:
       return {
         where: {
-          _and: buildPrimaryKeyIdExp(params.ids, primaryKeys)
+          _and: buildPrimaryKeyIdExp(params.id, primaryKeys)
         },
         limit: 1
       };
@@ -217,7 +217,7 @@ const defaultBuildVariables: BuildVariablesImpl = (introspectionResults) => (
     case DELETE:
       return {
         where: {
-          _and: buildPrimaryKeyIdExp(params.ids, primaryKeys)
+          _and: buildPrimaryKeyIdExp(params.id, primaryKeys)
         }
       };
     case CREATE:
@@ -241,7 +241,7 @@ const defaultBuildVariables: BuildVariablesImpl = (introspectionResults) => (
           resourceOptions
         ),
         where: {
-          _and: buildPrimaryKeyIdExp(params.ids, primaryKeys)
+          _and: buildPrimaryKeyIdExp(params.id, primaryKeys)
         }
       };
 
