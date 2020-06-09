@@ -1,8 +1,5 @@
 import { TypeKind, IntrospectionTypeRef, IntrospectionNamedTypeRef } from "graphql";
 
-export type HasuraGraphQLResponse<T extends Record<string, any> = Record<string, any>> =
-  { readonly data: T };
-
 export const isRequired = (type: IntrospectionTypeRef): boolean => {
   if (type.kind === TypeKind.LIST) {
     return isRequired(type.ofType);

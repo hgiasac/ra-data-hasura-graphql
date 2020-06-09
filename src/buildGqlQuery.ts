@@ -38,6 +38,7 @@ export const buildFragments = (introspectionResults: IntrospectedSchema) =>
         ...acc,
         gqlTypes.inlineFragment(
           gqlTypes.selectionSet(
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
             buildFields(linkedType as IntrospectionObjectType)
           ),
           gqlTypes.namedType(gqlTypes.name(type.name))
@@ -213,6 +214,7 @@ export const buildGqlQuery: GQLQueryBuilder = (
   queryType: IntrospectionField,
   variables: Record<string, any>
 ): DocumentNode => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { sortField, sortOrder, ...metaVariables } = variables;
   const apolloArgs = apolloArgsBuilder(queryType, variables);
   const args = argsBuilder(queryType, variables);

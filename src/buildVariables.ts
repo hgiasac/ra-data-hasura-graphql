@@ -1,7 +1,6 @@
 /* eslint-disable functional/prefer-readonly-type */
 /* eslint-disable functional/immutable-data */
 /* eslint-disable functional/no-let */
-import _ from "lodash";
 import {
   GET_ONE,
   GET_LIST,
@@ -14,9 +13,9 @@ import {
   DELETE_MANY
 } from "ra-core";
 
-import { getFinalType } from "./utils";
 import { IntrospectedSchema, FetchType } from "./ra-data-graphql";
 import { IntrospectionField } from "graphql";
+import { ResourceOptions } from "./types";
 
 export type BuildVariablesHandler<
   P extends Record<string, any> = Record<string, any>,
@@ -26,6 +25,7 @@ export type BuildVariablesHandler<
   aorFetchType: FetchType,
   params: P,
   queryType: IntrospectionField,
+  resourceOptions: ResourceOptions
 ) => R;
 
 export type VariablesBuilder<
@@ -39,47 +39,76 @@ type GetListVariables = {
   offset?: number
   order_by?: Record<string, "asc" | "desc">
 };
+
+const getPrimaryKeyExp = (ids: (string | number)[], primaryKeys?: readonly string[]): Record<string, any>[] => {
+
+  if (primaryKeys.length <= 1) {
+    const key = primaryKeys.length ? primaryKeys[0] : "id";
+
+    return [{ [key]: ids.length === 1 ? { _eq: ids[0] } : { _in: ids } }];
+  }
+
+  return ids.map((id) => {
+    const idObject = JSON.parse(id as string);
+
+    return primaryKeys.reduce((acc, key) => ({
+      ...acc,
+      [key]: {
+        _eq: idObject[key]
+      }
+    }), {});
+  });
+};
 const buildGetListVariables: VariablesBuilder<Record<string, any>, GetListVariables> = () => (
-  resource,
+  _resource,
   _aorFetchType,
-  params
+  params,
+  _queryType,
+  resourceOptions
 ) => {
-  const result: GetListVariables = {};
+  const { filterExps, primaryKeys = [] } = resourceOptions || {};
   const { filter: filterObj = {}, customFilters = [] } = params;
 
-  const filters = Object.keys(filterObj).reduce((acc, key) => {
-    let filter;
-    if (key === "ids") {
-      filter = { id: { _in: filterObj.ids } };
-    } else if (Array.isArray(filterObj[key])) {
-      filter = { [key]: { _in: filterObj[key] } };
-    } else {
-      const field = resource.type.fields.find((f) => f.name === key);
-      switch (getFinalType(field.type).name) {
-        case "String":
-          filter = { [key]: { _ilike: `%${filterObj[key] as string}%` } };
-          break;
-        default:
-          filter = { [key]: { _eq: filterObj[key] } };
-      }
+  const filterFn = (): Record<string, any> => {
+    if (filterExps && typeof filterExps === "function") {
+      return filterExps(filterObj);
     }
 
-    return [...acc, filter];
-  }, customFilters);
+    const filters = Object.keys(filterObj).reduce((acc, key) => {
 
-  result.where = { _and: filters };
+      const val = filterObj[key];
+      if (filterExps && filterExps[key]) {
+        return [...acc, filterExps[key](val)];
+      }
 
-  if (params.pagination) {
-    const perPage = params.pagination.perPage;
-    result.limit = perPage;
-    result.offset = (params.pagination.page - 1) * perPage;
-  }
+      if (key === "ids" && Array.isArray(filterObj.ids)) {
+        return acc.concat(getPrimaryKeyExp(filters.ids, primaryKeys));
+      }
 
-  if (params.sort) {
-    result.order_by = _.set({}, params.sort.field, params.sort.order.toLowerCase());
-  }
+      switch (typeof val) {
+        case "object":
+          return {
+            [key]: Array.isArray(val) ? { _in: val } : { _eq: val }
+          };
+        default:
+          return { [key]: { _eq: filterObj[key] } };
+      }
 
-  return result;
+    }, customFilters);
+
+    return { _and: filters };
+  };
+
+  return {
+    where: filterFn(),
+    ...(params.pagination ? {} : {
+      limit: params.pagination.perPage,
+      offset: (params.pagination.page - 1) * params.pagination.perPage
+    }),
+    order_by: params.sort ? {
+      [params.sort.field]: params.sort.order.toLowerCase()
+    } : undefined
+  };
 };
 
 const buildUpdateVariables: BuildVariablesHandler = (resource, _aorFetchType, params) =>
@@ -115,28 +144,36 @@ export type BuildVariablesImpl = (introspectionResults: IntrospectedSchema) => (
   aorFetchType: FetchType,
   params: Record<string, any>,
   queryType: IntrospectionField,
+  resourceOptions: ResourceOptions
 ) => Record<string, any>;
 
 const defaultBuildVariables: BuildVariablesImpl = (introspectionResults) => (
   resource: Record<string, any>,
   aorFetchType: FetchType,
   params: Record<string, any>,
-  queryType: IntrospectionField
+  queryType: IntrospectionField,
+  resourceOptions: ResourceOptions
 ): Record<string, any> => {
+
+  const primaryKeys = resourceOptions && resourceOptions.primaryKeys
+    ? resourceOptions.primaryKeys : [];
+
   switch (aorFetchType) {
     case GET_LIST:
       return buildGetListVariables(introspectionResults)(
         resource,
         aorFetchType,
         params,
-        queryType
+        queryType,
+        resourceOptions
       );
     case GET_MANY_REFERENCE: {
       const built = buildGetListVariables(introspectionResults)(
         resource,
         aorFetchType,
         params,
-        queryType
+        queryType,
+        resourceOptions
       );
       if (params.filter) {
         return {
@@ -160,18 +197,24 @@ const defaultBuildVariables: BuildVariablesImpl = (introspectionResults) => (
     case GET_MANY:
     case DELETE_MANY:
       return {
-        where: { id: { _in: params.ids } }
+        where: {
+          _and: getPrimaryKeyExp(params.ids, primaryKeys)
+        }
       };
 
     case GET_ONE:
       return {
-        where: { id: { _eq: params.id } },
+        where: {
+          _and: getPrimaryKeyExp(params.ids, primaryKeys)
+        },
         limit: 1
       };
 
     case DELETE:
       return {
-        where: { id: { _eq: params.id } }
+        where: {
+          _and: getPrimaryKeyExp(params.ids, primaryKeys)
+        }
       };
     case CREATE:
       return {
@@ -179,7 +222,8 @@ const defaultBuildVariables: BuildVariablesImpl = (introspectionResults) => (
           resource,
           aorFetchType,
           params,
-          queryType
+          queryType,
+          resourceOptions
         )
       };
 
@@ -189,9 +233,12 @@ const defaultBuildVariables: BuildVariablesImpl = (introspectionResults) => (
           resource,
           aorFetchType,
           params,
-          queryType
+          queryType,
+          resourceOptions
         ),
-        where: { id: { _eq: params.id } }
+        where: {
+          _and: getPrimaryKeyExp(params.ids, primaryKeys)
+        }
       };
 
     case UPDATE_MANY:
@@ -200,9 +247,12 @@ const defaultBuildVariables: BuildVariablesImpl = (introspectionResults) => (
           resource,
           aorFetchType,
           params,
-          queryType
+          queryType,
+          resourceOptions
         ),
-        where: { id: { _in: params.ids } }
+        where: {
+          _and: getPrimaryKeyExp(params.ids, primaryKeys)
+        }
       };
     default:
       throw new Error(`Unimplemented action type: ${aorFetchType as string}`);

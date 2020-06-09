@@ -150,9 +150,9 @@ export default async <Options extends Record<string, any> = any>(
 
     if (!parseResponse) {
       throw new Error(
-                `Missing '${sanitizeFetchType(
-                    aorFetchType
-                )}' in the override option`
+        `Missing '${sanitizeFetchType(
+            aorFetchType
+        )}' in the override option`
       );
     }
 

@@ -1,4 +1,3 @@
-import merge from "lodash/merge";
 import buildDataProvider, { GraphQLProviderOptions } from "./ra-data-graphql";
 import {
   GET_ONE,
@@ -17,6 +16,7 @@ import buildGqlQuery, { buildFields, buildMetaArgs, buildArgs, buildApolloArgs }
 import getResponseParser from "./getResponseParser";
 import buildVariables from "./buildVariables";
 import { IntrospectionType } from "graphql";
+import { HasuraGraphQLProviderOptions } from "./types";
 export {
   buildQuery,
   buildGqlQuery,
@@ -28,24 +28,35 @@ export {
   buildApolloArgs
 };
 
-const defaultOptions: Partial<GraphQLProviderOptions> = {
-  buildQuery,
-  introspection: {
-    operationNames: {
-      [GET_LIST]: (resource) => resource.name,
-      [GET_ONE]: (resource) => resource.name,
-      [GET_MANY]: (resource) => resource.name,
-      [GET_MANY_REFERENCE]: (resource) => resource.name,
-      [CREATE]: (resource: IntrospectionType) => `insert_${resource.name}`,
-      [UPDATE]: (resource: IntrospectionType) => `update_${resource.name}`,
-      [UPDATE_MANY]: (resource: IntrospectionType) => `update_${resource.name}`,
-      [DELETE]: (resource: IntrospectionType) => `delete_${resource.name}`,
-      [DELETE_MANY]: (resource: IntrospectionType) => `delete_${resource.name}`
-    }
-  }
-};
+export * from "./types";
+
+function hasuraGraphQLOptions<Options extends Record<string, any> = Record<string, any>>(
+  options: Options & HasuraGraphQLProviderOptions
+): Partial<HasuraGraphQLProviderOptions> {
+  const { resourceOptions, introspection, ...rest } = options;
+
+  return {
+    buildQuery: buildQuery(resourceOptions),
+    introspection: {
+      ...introspection,
+      operationNames: {
+        [GET_LIST]: (resource) => resource.name,
+        [GET_ONE]: (resource) => resource.name,
+        [GET_MANY]: (resource) => resource.name,
+        [GET_MANY_REFERENCE]: (resource) => resource.name,
+        [CREATE]: (resource: IntrospectionType) => `insert_${resource.name}`,
+        [UPDATE]: (resource: IntrospectionType) => `update_${resource.name}`,
+        [UPDATE_MANY]: (resource: IntrospectionType) => `update_${resource.name}`,
+        [DELETE]: (resource: IntrospectionType) => `delete_${resource.name}`,
+        [DELETE_MANY]: (resource: IntrospectionType) => `delete_${resource.name}`,
+        ...(introspection && introspection.operationNames ? introspection.operationNames : {})
+      }
+    },
+    ...rest
+  };
+}
 
 export default <Options extends Record<string, any> = Record<string, any>>(
-  options: Options & GraphQLProviderOptions<Options>
+  options: Options & GraphQLProviderOptions
 ): Promise<DataProvider> =>
-  buildDataProvider(merge({}, defaultOptions, options));
+  buildDataProvider(hasuraGraphQLOptions(options));

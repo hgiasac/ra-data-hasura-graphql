@@ -1,13 +1,25 @@
-import buildVariables from "./buildVariables";
+import buildVariables, { BuildVariablesImpl } from "./buildVariables";
 import buildGqlQuery, { BuildGqlQueryImpl } from "./buildGqlQuery";
-import getResponseParser from "./getResponseParser";
+import getResponseParser, { ResponseParserGetter } from "./getResponseParser";
 import { IntrospectedSchema, FetchType } from "./ra-data-graphql";
+import { ResourceOptions } from "./types";
+import {
+  GET_LIST,
+  GET_ONE,
+  GET_MANY,
+  GET_MANY_REFERENCE,
+  CREATE,
+  UPDATE,
+  UPDATE_MANY,
+  DELETE,
+  DELETE_MANY
+} from "ra-core";
 
 const buildQueryFactory = (
-  buildVariablesImpl,
+  buildVariablesImpl: BuildVariablesImpl,
   buildGqlQueryImpl: BuildGqlQueryImpl,
-  getResponseParserImpl
-) => (introspectionResults: IntrospectedSchema) => {
+  getResponseParserImpl: ResponseParserGetter
+) => (resourceOptions: ResourceOptions) => (introspectionResults: IntrospectedSchema) => {
   const knownResources = introspectionResults.resources.map((r) => r.type.name);
 
   return (aorFetchType: FetchType, resourceName: string, params) => {
@@ -19,13 +31,14 @@ const buildQueryFactory = (
       if (knownResources.length) {
         throw new Error(
           `Unknown resource ${resourceName}. ` +
-          `Make sure it has been declared on your server side schema. Known resources are ${knownResources.join(", ")}`
+          "Make sure it has been declared on your server side schema, or the user has resource permission. " +
+          `Known resources are ${knownResources.join(", ")}`
         );
       } else {
         throw new Error(
           `Unknown resource ${resourceName}. No resources were found. ` +
           // eslint-disable-next-line max-len
-          "Make sure it has been declared on your server side schema and check if your Authorization header is properly set up."
+          "Make sure it has been declared on your server side schema, or the user has resource permission."
         );
       }
     }
@@ -33,17 +46,38 @@ const buildQueryFactory = (
     const queryType = resource[aorFetchType];
 
     if (!queryType) {
-      throw new Error(
-        `No query or mutation matching fetch type ${aorFetchType as string} ` +
-        `could be found for resource ${resource.type.name}`
-      );
+      const throwError = (queryTy: string, sqlTy?: string): never => {
+        throw new Error(
+          `No ${queryTy} matching fetch type could be found for resource ${resource.type.name}. ${
+          sqlTy ? `Maybe the current user doesn't have ${sqlTy} permission` : ""}`
+        );
+      };
+
+      switch (aorFetchType) {
+        case GET_LIST:
+        case GET_ONE:
+        case GET_MANY:
+        case GET_MANY_REFERENCE:
+          return throwError("query", "SELECT");
+        case CREATE:
+          return throwError("query", "INSERT");
+        case UPDATE:
+        case UPDATE_MANY:
+          return throwError("query", "UPDATE");
+        case DELETE:
+        case DELETE_MANY:
+          return throwError("query", "DELETE");
+        default:
+          return throwError("query or mutation");
+      }
     }
 
     const variables = buildVariablesImpl(introspectionResults)(
       resource,
       aorFetchType,
       params,
-      queryType
+      queryType,
+      resourceOptions
     );
     const query = buildGqlQueryImpl(introspectionResults)(
       resource,
@@ -53,8 +87,8 @@ const buildQueryFactory = (
     );
     const parseResponse = getResponseParserImpl(introspectionResults)(
       aorFetchType,
-      resource,
-      queryType
+      resourceName,
+      resourceOptions
     );
 
     return {

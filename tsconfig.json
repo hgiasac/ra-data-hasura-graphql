@@ -1,12 +1,12 @@
 {
   "compilerOptions": {
     "module": "es2015",
-    "moduleResolution": "node",
     "target": "es6",
     "lib": [
       "es2015",
       "dom"
     ],
+    "moduleResolution": "node",
     "declaration": true,
     "noImplicitAny": false,
     "noImplicitReturns": false,
@@ -23,5 +23,9 @@
   },
   "include": [
     "src"
+  ],
+  "exclude": [
+    "**/node_modules/*",
+    "**/*.test.ts"
   ]
 }
