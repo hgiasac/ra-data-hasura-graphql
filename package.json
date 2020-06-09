@@ -30,7 +30,8 @@
         "build": "webpack",
         "compile": "npm run clean && tsc",
         "clean": "rm -rf dist",
-        "lint": "eslint --ext .js,.ts src"
+        "lint": "eslint --ext .js,.ts src",
+        "prepare": "npm run compile"
     },
     "dependencies": {
         "@types/lodash": "^4.14.155",
