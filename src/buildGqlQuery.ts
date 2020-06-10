@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import {
   GET_LIST,
   GET_MANY,
@@ -20,7 +21,7 @@ import {
 } from "graphql";
 import * as gqlTypes from "graphql-ast-types-browser";
 import { isList, isRequired, getFinalType } from "./utils";
-import { IntrospectedSchema, FetchType } from "./ra-data-graphql";
+import { IntrospectedSchema } from "./ra-data-graphql";
 import {
   ArgsBuilder,
   MetaArgsBuilder,
@@ -29,6 +30,13 @@ import {
   FieldsBuilder,
   BuildGqlQueryImpl
 } from "./types";
+import {
+  WATCH_LIST,
+  WATCH_MANY_REFERENCE,
+  WATCH_MANY,
+  WATCH_ONE,
+  HasuraFetchType
+} from "./fetchDataAction";
 
 export const buildFragments = (introspectionResults: IntrospectedSchema) =>
   (possibleTypes: readonly IntrospectionTypeRef[]): readonly InlineFragmentNode[] =>
@@ -125,10 +133,12 @@ export const buildMetaArgs: MetaArgsBuilder = (query, variables, aorFetchType) =
   }
 
   const validVariables = Object.keys(variables).filter((k) => {
-    if (
-      aorFetchType === GET_LIST ||
-            aorFetchType === GET_MANY ||
-            aorFetchType === GET_MANY_REFERENCE
+    if (aorFetchType === GET_LIST ||
+      aorFetchType === GET_MANY ||
+      aorFetchType === GET_MANY_REFERENCE ||
+      aorFetchType === WATCH_LIST ||
+      aorFetchType === WATCH_MANY ||
+      aorFetchType === WATCH_MANY_REFERENCE
     ) {
       return (
         typeof variables[k] !== "undefined" &&
@@ -186,7 +196,7 @@ export const buildGqlQuery: GQLQueryBuilder = (
   apolloArgsBuilder
 ) => (
   resource: Record<string, any>,
-  aorFetchType: FetchType,
+  aorFetchType: HasuraFetchType,
   queryType: IntrospectionField,
   variables: Record<string, any>
 ): DocumentNode => {
@@ -197,42 +207,48 @@ export const buildGqlQuery: GQLQueryBuilder = (
   const metaArgs = metaArgsBuilder(queryType, metaVariables, aorFetchType);
   const fields = fieldsBuilder(_introspectionResults)(resource.type);
 
+  const buildReadManyQuery = (type: string): DocumentNode => gqlTypes.document([
+    gqlTypes.operationDefinition(
+      type,
+      gqlTypes.selectionSet([
+        gqlTypes.field(
+          gqlTypes.name(queryType.name),
+          gqlTypes.name("items"),
+          args,
+          null,
+          gqlTypes.selectionSet(fields)
+        )
+      ].concat(
+        // GET_MANY and WATCH_MANY doesn't need total count
+        [GET_MANY, WATCH_MANY].includes(aorFetchType) ? [] : gqlTypes.field(
+          gqlTypes.name(`${queryType.name}_aggregate`),
+          gqlTypes.name("total"),
+          metaArgs,
+          null,
+          gqlTypes.selectionSet([
+            gqlTypes.field(
+              gqlTypes.name("aggregate"),
+              null,
+              null,
+              null,
+              gqlTypes.selectionSet([
+                gqlTypes.field(gqlTypes.name("count"))
+              ])
+            )
+          ])
+        )
+      )),
+      gqlTypes.name(queryType.name),
+      apolloArgs
+    )
+  ]);
+
   if ([GET_LIST, GET_MANY, GET_MANY_REFERENCE].includes(aorFetchType)) {
-    return gqlTypes.document([
-      gqlTypes.operationDefinition(
-        "query",
-        gqlTypes.selectionSet([
-          gqlTypes.field(
-            gqlTypes.name(queryType.name),
-            gqlTypes.name("items"),
-            args,
-            null,
-            gqlTypes.selectionSet(fields)
-          )
-        ].concat(
-          // GET_MANY doesn't need total count
-          aorFetchType === GET_MANY ? [] : gqlTypes.field(
-            gqlTypes.name(`${queryType.name}_aggregate`),
-            gqlTypes.name("total"),
-            metaArgs,
-            null,
-            gqlTypes.selectionSet([
-              gqlTypes.field(
-                gqlTypes.name("aggregate"),
-                null,
-                null,
-                null,
-                gqlTypes.selectionSet([
-                  gqlTypes.field(gqlTypes.name("count"))
-                ])
-              )
-            ])
-          )
-        )),
-        gqlTypes.name(queryType.name),
-        apolloArgs
-      )
-    ]);
+    return buildReadManyQuery("query");
+  }
+
+  if ([WATCH_LIST, WATCH_MANY, WATCH_MANY_REFERENCE].includes(aorFetchType)) {
+    return buildReadManyQuery("subscription");
   }
 
   if (
@@ -270,7 +286,7 @@ export const buildGqlQuery: GQLQueryBuilder = (
 
   return gqlTypes.document([
     gqlTypes.operationDefinition(
-      "query",
+      aorFetchType === WATCH_ONE ? "subscription" : "query",
       gqlTypes.selectionSet([
         gqlTypes.field(
           gqlTypes.name(queryType.name),

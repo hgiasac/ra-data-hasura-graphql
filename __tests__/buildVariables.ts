@@ -8,6 +8,7 @@ import {
   UPDATE
 } from "ra-core";
 import buildVariables from "../src/buildVariables";
+import { HasuraFetchType, WATCH_LIST, WATCH_MANY, WATCH_MANY_REFERENCE } from "../src";
 
 const resourceOptions = {
   articles: {},
@@ -42,8 +43,9 @@ const articleResource = {
   }
 };
 
-describe("buildVariables", () => {
-  describe("GET_LIST", () => {
+const testList = (type: HasuraFetchType) => {
+
+  describe(type, () => {
     it("returns correct variables", () => {
 
       const params = {
@@ -59,7 +61,7 @@ describe("buildVariables", () => {
 
       const variables = buildVariables(introspectionResult)(
         articleResource,
-        GET_LIST,
+        type,
         params,
         null,
         {}
@@ -97,7 +99,7 @@ describe("buildVariables", () => {
 
       const variables = buildVariables(introspectionResult)(
         articleResource,
-        GET_LIST,
+        type,
         params,
         null,
         resourceOptions.customPk
@@ -153,6 +155,74 @@ describe("buildVariables", () => {
       });
     });
   });
+};
+
+const testGetMany = (type: HasuraFetchType) => {
+  describe(type, () => {
+    it("returns correct variables", () => {
+      const params = {
+        ids: ["tag1", "tag2"]
+      };
+
+      expect(
+        buildVariables(introspectionResult)(
+          articleResource,
+          type,
+          params,
+          {} as any,
+          {}
+        )
+      ).toEqual({
+        where: {
+          id: { _in: ["tag1", "tag2"] }
+        }
+      });
+    });
+  });
+
+};
+
+const testGetManyRef = (type: HasuraFetchType) => {
+  describe(type, () => {
+    it("returns correct variables", () => {
+      const params = {
+        target: "author.id",
+        id: "author1",
+        pagination: { page: 1, perPage: 10 },
+        sort: { field: "name", order: "ASC" }
+      };
+
+      expect(
+        buildVariables(introspectionResult)(
+          articleResource,
+          type,
+          params,
+          {} as any,
+          {}
+        )
+      ).toEqual({
+        where: {
+          _and: [{
+            author: {
+              id: { _eq: "author1" }
+            }
+          }]
+        },
+        limit: 10,
+        order_by: { name: "asc" },
+        offset: 0
+      });
+    });
+  });
+};
+describe("buildVariables", () => {
+
+  testList(GET_LIST);
+  testList(WATCH_LIST);
+  testGetMany(GET_MANY);
+  testGetMany(WATCH_MANY);
+  testGetManyRef(GET_MANY_REFERENCE);
+  testGetManyRef(WATCH_MANY_REFERENCE);
 
   describe("CREATE", () => {
     it("returns correct variables", () => {
@@ -212,60 +282,6 @@ describe("buildVariables", () => {
             _eq: "foo1"
           }
         }
-      });
-    });
-  });
-
-  describe("GET_MANY", () => {
-    it("returns correct variables", () => {
-      const params = {
-        ids: ["tag1", "tag2"]
-      };
-
-      expect(
-        buildVariables(introspectionResult)(
-          articleResource,
-          GET_MANY,
-          params,
-          {} as any,
-          {}
-        )
-      ).toEqual({
-        where: {
-          id: { _in: ["tag1", "tag2"] }
-        }
-      });
-    });
-  });
-
-  describe("GET_MANY_REFERENCE", () => {
-    it("returns correct variables", () => {
-      const params = {
-        target: "author.id",
-        id: "author1",
-        pagination: { page: 1, perPage: 10 },
-        sort: { field: "name", order: "ASC" }
-      };
-
-      expect(
-        buildVariables(introspectionResult)(
-          articleResource,
-          GET_MANY_REFERENCE,
-          params,
-          {} as any,
-          {}
-        )
-      ).toEqual({
-        where: {
-          _and: [{
-            author: {
-              id: { _eq: "author1" }
-            }
-          }]
-        },
-        limit: 10,
-        order_by: { name: "asc" },
-        offset: 0
       });
     });
   });

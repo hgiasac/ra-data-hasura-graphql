@@ -14,6 +14,7 @@ import buildGqlQuery, {
   buildFields,
   getArgType
 } from "../src/buildGqlQuery";
+import { WATCH_LIST, WATCH_MANY, WATCH_MANY_REFERENCE, WATCH_ONE } from "../src";
 
 describe("getArgType", () => {
   it("returns the arg type", () => {
@@ -324,6 +325,94 @@ describe("buildGqlQuery", () => {
 `
     );
   });
+
+  it("returns the correct query for WATCH_LIST", () => {
+    expect(
+      print(
+        buildGqlQuery(introspectionResults)(
+          resource,
+          WATCH_LIST,
+          queryType,
+          params
+        )
+      )
+    ).toEqual(
+            `subscription allCommand($foo: Int!) {
+  items: allCommand(foo: $foo) {
+    foo
+  }
+  total: allCommand_aggregate(foo: $foo) {
+    aggregate {
+      count
+    }
+  }
+}
+`
+    );
+  });
+  it("returns the correct query for WATCH_MANY", () => {
+    expect(
+      print(
+        buildGqlQuery(introspectionResults)(
+          resource,
+          WATCH_MANY,
+          queryType,
+          params
+        )
+      )
+    ).toEqual(
+            `subscription allCommand($foo: Int!) {
+  items: allCommand(foo: $foo) {
+    foo
+  }
+}
+`
+    );
+  });
+  it("returns the correct query for WATCH_MANY_REFERENCE", () => {
+    expect(
+      print(
+        buildGqlQuery(introspectionResults)(
+          resource,
+          WATCH_MANY_REFERENCE,
+          queryType,
+          params
+        )
+      )
+    ).toEqual(
+            `subscription allCommand($foo: Int!) {
+  items: allCommand(foo: $foo) {
+    foo
+  }
+  total: allCommand_aggregate(foo: $foo) {
+    aggregate {
+      count
+    }
+  }
+}
+`
+    );
+  });
+  it("returns the correct query for WATCH_ONE", () => {
+    expect(
+      print(
+        buildGqlQuery(introspectionResults)(
+          resource,
+          WATCH_ONE,
+          { ...queryType, name: "watchCommand" },
+          params
+        )
+      )
+    ).toEqual(
+            `subscription watchCommand($foo: Int!) {
+  returning: watchCommand(foo: $foo) {
+    foo
+  }
+}
+`
+    );
+  });
+
   it("returns the correct query for UPDATE", () => {
     expect(
       print(

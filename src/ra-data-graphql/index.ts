@@ -63,6 +63,12 @@ const getOptions = (options, aorFetchType, resource): any => {
   return options;
 };
 
+type QueryHandler = {
+  readonly query: DocumentNode
+  readonly variables: Record<string, any>
+  readonly parseResponse: (response: ApolloQueryResult<any> | FetchResult) => any
+};
+
 export type QueryBuilder<OtherOptions = any> =  (
   schema: IntrospectedSchema,
   otherOptions?: OtherOptions
@@ -95,15 +101,13 @@ export type GraphQLProviderOptions<OtherOptions = any> = {
   readonly override?: Record<string, (params: GetListParams) => QueryHandler>
 };
 
-type QueryHandler = {
-  readonly query: DocumentNode
-  readonly variables: Record<string, any>
-  readonly parseResponse: (response: ApolloQueryResult<any> | FetchResult) => any
+export type GraphQLDataProvider = DataProvider & {
+  readonly introspectedSchema: IntrospectedSchema
 };
 
 export default async <Options extends Record<string, any> = any>(
   options: Options & GraphQLProviderOptions<Options>
-): Promise<DataProvider> => {
+): Promise<GraphQLDataProvider> => {
   const {
     client: clientObject,
     clientOptions,
@@ -184,6 +188,7 @@ export default async <Options extends Record<string, any> = any>(
   };
 
   return {
+    introspectedSchema: introspectionResults,
     getList: (resource, params) => handle(GET_LIST, resource, params),
     getOne: (resource, params) => handle(GET_ONE, resource, params),
     getMany: (resource, params) => handle(GET_MANY, resource, params),

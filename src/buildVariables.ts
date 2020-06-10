@@ -12,9 +12,20 @@ import {
   UPDATE_MANY,
   DELETE_MANY
 } from "ra-core";
-import { FetchType } from "./ra-data-graphql";
 import { IntrospectionField } from "graphql";
-import { ResourceOptions, VariablesBuilder, BuildVariablesHandler, BuildVariablesImpl } from "./types";
+import {
+  ResourceOptions,
+  VariablesBuilder,
+  BuildVariablesHandler,
+  BuildVariablesImpl
+} from "./types";
+import {
+  WATCH_LIST,
+  WATCH_MANY_REFERENCE,
+  WATCH_MANY,
+  WATCH_ONE,
+  HasuraFetchType
+} from "./fetchDataAction";
 import { buildPrimaryKeyIdExp } from "./utils";
 
 type GetListVariables = {
@@ -168,7 +179,7 @@ const buildCreateVariables: BuildVariablesHandler = (_resource, _aorFetchType, p
 
 const defaultBuildVariables: BuildVariablesImpl = (introspectionResults) => (
   resource: Record<string, any>,
-  aorFetchType: FetchType,
+  aorFetchType: HasuraFetchType,
   params: Record<string, any>,
   queryType: IntrospectionField,
   resourceOptions: ResourceOptions
@@ -179,6 +190,7 @@ const defaultBuildVariables: BuildVariablesImpl = (introspectionResults) => (
 
   switch (aorFetchType) {
     case GET_LIST:
+    case WATCH_LIST:
       return buildGetListVariables(introspectionResults)(
         resource,
         aorFetchType,
@@ -186,7 +198,8 @@ const defaultBuildVariables: BuildVariablesImpl = (introspectionResults) => (
         queryType,
         resourceOptions
       );
-    case GET_MANY_REFERENCE: {
+    case GET_MANY_REFERENCE:
+    case WATCH_MANY_REFERENCE:
       return buildGetListVariables(introspectionResults)(
         resource,
         aorFetchType,
@@ -200,14 +213,15 @@ const defaultBuildVariables: BuildVariablesImpl = (introspectionResults) => (
         queryType,
         resourceOptions
       );
-    }
     case GET_MANY:
     case DELETE_MANY:
+    case WATCH_MANY:
       return {
         where: buildPrimaryKeyIdExp(params.ids, primaryKeys)
       };
 
     case GET_ONE:
+    case WATCH_ONE:
       return {
         where: buildPrimaryKeyIdExp([params.id], primaryKeys),
         limit: 1

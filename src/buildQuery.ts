@@ -1,8 +1,21 @@
 import buildVariables from "./buildVariables";
 import buildGqlQuery from "./buildGqlQuery";
-import getResponseParser, { ResponseParserGetter } from "./getResponseParser";
-import { IntrospectedSchema, FetchType, QueryBuilder } from "./ra-data-graphql";
-import { HasuraGraphQLProviderOptions, BuildGqlQueryImpl, BuildVariablesImpl } from "./types";
+import getResponseParser from "./getResponseParser";
+import { IntrospectedSchema } from "./ra-data-graphql";
+import {
+  HasuraGraphQLProviderOptions,
+  BuildGqlQueryImpl,
+  BuildVariablesImpl,
+  ResponseParserImpl,
+  HasuraQueryBuilder
+} from "./types";
+import {
+  WATCH_LIST,
+  WATCH_MANY_REFERENCE,
+  WATCH_MANY,
+  WATCH_ONE,
+  HasuraFetchType
+} from "./fetchDataAction";
 import {
   GET_LIST,
   GET_ONE,
@@ -15,16 +28,10 @@ import {
   DELETE_MANY
 } from "ra-core";
 
-export type RAHasuraQueryBuilder = (
+export const buildQueryFactory: HasuraQueryBuilder = (
   buildVariablesImpl: BuildVariablesImpl,
   buildGqlQueryImpl: BuildGqlQueryImpl,
-  getResponseParserImpl: ResponseParserGetter
-) => QueryBuilder<HasuraGraphQLProviderOptions>;
-
-export const buildQueryFactory: RAHasuraQueryBuilder = (
-  buildVariablesImpl: BuildVariablesImpl,
-  buildGqlQueryImpl: BuildGqlQueryImpl,
-  getResponseParserImpl: ResponseParserGetter
+  getResponseParserImpl: ResponseParserImpl
 ) => (
   introspectionResults: IntrospectedSchema,
   extraOptions: HasuraGraphQLProviderOptions
@@ -34,7 +41,7 @@ export const buildQueryFactory: RAHasuraQueryBuilder = (
 
   const knownResources = introspectionResults.resources.map((r) => r.type.name);
 
-  return (aorFetchType: FetchType, resourceName: string, params) => {
+  return (aorFetchType: HasuraFetchType, resourceName: string, params) => {
     const resourceOptions = resourceOptionsM[resourceName] || {};
     const resourceAlias = resourceOptions.alias || resourceName;
 
@@ -74,6 +81,10 @@ export const buildQueryFactory: RAHasuraQueryBuilder = (
         case GET_ONE:
         case GET_MANY:
         case GET_MANY_REFERENCE:
+        case WATCH_MANY_REFERENCE:
+        case WATCH_LIST:
+        case WATCH_MANY:
+        case WATCH_ONE:
           return throwError("query", "SELECT");
         case CREATE:
           return throwError("query", "INSERT");

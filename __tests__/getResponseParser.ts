@@ -8,6 +8,7 @@ import {
   DELETE
 } from "ra-core";
 import getResponseParser from "../src/getResponseParser";
+import { WATCH_LIST, WATCH_MANY, WATCH_MANY_REFERENCE } from "../src";
 
 const testListTypes = (type, hasTotal: boolean) => {
   it(`returns the response expected by AOR for ${type}`, () => {
@@ -256,6 +257,9 @@ describe("getResponseParser", () => {
   testListTypes(GET_LIST, true);
   testListTypes(GET_MANY, false);
   testListTypes(GET_MANY_REFERENCE, true);
+  testListTypes(WATCH_LIST, true);
+  testListTypes(WATCH_MANY, false);
+  testListTypes(WATCH_MANY_REFERENCE, true);
   testSingleTypes(CREATE);
   testSingleTypes(UPDATE);
   testSingleTypes(DELETE);

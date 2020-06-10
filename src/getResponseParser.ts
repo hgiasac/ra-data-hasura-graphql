@@ -9,8 +9,18 @@ import {
   UPDATE_MANY,
   DELETE_MANY
 } from "ra-core";
-import { IntrospectedSchema, FetchType } from "./ra-data-graphql";
-import { HasuraGraphQLResponse, ResourceOptions } from "./types";
+import {
+  HasuraGraphQLResponse,
+  ResourceOptions,
+  ResponseParserImpl
+} from "./types";
+import {
+  WATCH_LIST,
+  WATCH_MANY_REFERENCE,
+  WATCH_MANY,
+  WATCH_ONE,
+  HasuraFetchType
+} from "./fetchDataAction";
 
 const sanitizeResource = (data = {}): Record<string, any> => {
   const result = Object.keys(data).reduce((acc, key) => {
@@ -57,14 +67,8 @@ const sanitizeResource = (data = {}): Record<string, any> => {
   return result;
 };
 
-export type ResponseParserGetter = (
-  introspectionResults: IntrospectedSchema
-) => (aorFetchType: FetchType, resourceName: string, resourceOptions: ResourceOptions) => (
-  res: HasuraGraphQLResponse
-) => Record<string, any>;
-
-const parseResponse: ResponseParserGetter = () =>
-  (aorFetchType: FetchType, resourceName: string, resourceOptions: ResourceOptions) =>
+const parseResponse: ResponseParserImpl = () =>
+  (aorFetchType: HasuraFetchType, resourceName: string, resourceOptions: ResourceOptions) =>
     (res: HasuraGraphQLResponse): Record<string, any>  => {
       const response = res.data;
       const { primaryKeys = [] } = resourceOptions;
@@ -111,17 +115,21 @@ const parseResponse: ResponseParserGetter = () =>
       switch (aorFetchType) {
         case GET_MANY_REFERENCE:
         case GET_LIST:
+        case WATCH_LIST:
+        case WATCH_MANY_REFERENCE:
           return {
             data: response.items.map((record) => sanitizeResource(serializeItemId(record))),
             total: response.total.aggregate.count
           };
 
         case GET_MANY:
+        case WATCH_MANY:
           return {
             data: response.items.map((record) => sanitizeResource(serializeItemId(record)))
           };
 
         case GET_ONE:
+        case WATCH_ONE:
           return {
             data: sanitizeResource(serializeItemId(response.returning[0]))
           };

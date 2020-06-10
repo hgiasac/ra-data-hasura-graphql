@@ -1,4 +1,4 @@
-import { IntrospectedSchema, FetchType } from "./ra-data-graphql";
+import { IntrospectedSchema, QueryBuilder, GraphQLDataProvider } from "./ra-data-graphql";
 import {
   IntrospectionField,
   DocumentNode,
@@ -7,6 +7,19 @@ import {
   ASTNode,
   VariableDefinitionNode
 } from "graphql";
+import {
+  GetListParams,
+  GetOneParams,
+  GetManyParams,
+  GetManyReferenceParams,
+  GetListResult,
+  GetOneResult,
+  GetManyResult,
+  GetManyReferenceResult
+} from "ra-core";
+import { HasuraFetchType } from "./fetchDataAction";
+import { SubscriptionOptions } from "apollo-client";
+import { Observable } from "apollo-client/util/Observable";
 
 export type HasuraGraphQLResponse<T extends Record<string, any> = Record<string, any>> =
   { readonly data: T };
@@ -31,14 +44,16 @@ export type ResourceOptionsMap = Record<string, ResourceOptions>;
 
 export type HasuraGraphQLProviderOptions = {
   readonly resourceOptions?: ResourceOptionsMap
+  readonly subscription?: Partial<SubscriptionOptions<unknown>>
 };
 
+// BuildVariables interfaces
 export type BuildVariablesHandler<
   P extends Record<string, any> = Record<string, any>,
   R extends Record<string, any> = Record<string, any>,
 > = (
   resource: Record<string, any>,
-  aorFetchType: FetchType,
+  aorFetchType: HasuraFetchType,
   params: P,
   queryType: IntrospectionField,
   resourceOptions: ResourceOptions
@@ -51,7 +66,7 @@ export type VariablesBuilder<
 
 export type BuildVariablesImpl = (introspectionResults: IntrospectedSchema) => (
   resource: Record<string, any>,
-  aorFetchType: FetchType,
+  aorFetchType: HasuraFetchType,
   params: Record<string, any>,
   queryType: IntrospectionField,
   resourceOptions: ResourceOptions
@@ -60,7 +75,7 @@ export type BuildVariablesImpl = (introspectionResults: IntrospectedSchema) => (
 // GQLQueryBuilder
 export type GQLQueryBuildHandler = (
   resource: Record<string, any>,
-  aorFetchType: FetchType,
+  aorFetchType: HasuraFetchType,
   queryType: IntrospectionField,
   variables: Record<string, any>
 ) => DocumentNode;
@@ -78,7 +93,7 @@ export type FieldsBuilder =
 export type MetaArgsBuilder =  (
   query: IntrospectionField,
   variables: Record<string, any>,
-  aorFetchType: FetchType
+  aorFetchType: HasuraFetchType
 ) => readonly ArgumentNode[];
 
 export type GQLQueryBuilder = (
@@ -90,3 +105,22 @@ export type GQLQueryBuilder = (
 ) => GQLQueryBuildHandler;
 
 export type BuildGqlQueryImpl = (introspectionResults: IntrospectedSchema) => GQLQueryBuildHandler;
+
+export type ResponseParserImpl = (
+  introspectionResults: IntrospectedSchema
+) => (aorFetchType: HasuraFetchType, resourceName: string, resourceOptions: ResourceOptions) => (
+  res: HasuraGraphQLResponse
+) => Record<string, any>;
+
+export type HasuraQueryBuilder = (
+  buildVariablesImpl: BuildVariablesImpl,
+  buildGqlQueryImpl: BuildGqlQueryImpl,
+  getResponseParserImpl: ResponseParserImpl
+) => QueryBuilder<HasuraGraphQLProviderOptions>;
+
+export type HasuraDataProvider = GraphQLDataProvider & {
+  readonly watchList: (resource: string, params: GetListParams) => Observable<GetListResult>
+  readonly watchOne: (resource: string, params: GetOneParams) => Observable<GetOneResult>
+  readonly watchMany: (resource: string, params: GetManyParams) => Observable<GetManyResult>
+  readonly watchManyReference: (resource: string, params: GetManyReferenceParams) => Observable<GetManyReferenceResult>
+};
