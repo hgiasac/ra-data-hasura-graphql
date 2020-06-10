@@ -1,4 +1,4 @@
-import buildDataProvider from "./ra-data-graphql";
+import buildDataProvider, { GraphQLProviderOptions } from "./ra-data-graphql";
 import {
   GET_ONE,
   GET_LIST,
@@ -33,13 +33,15 @@ export {
 
 export * from "./types";
 
+type ProviderOptions = HasuraGraphQLProviderOptions & GraphQLProviderOptions;
+
 function hasuraGraphQLOptions<Options extends Record<string, any> = Record<string, any>>(
-  options: Options & Partial<HasuraGraphQLProviderOptions>
-): Partial<HasuraGraphQLProviderOptions> {
-  const { resourceOptions, introspection, ...rest } = options;
+  options: Options & Partial<ProviderOptions>
+): Partial<ProviderOptions> {
+  const { introspection, ...rest } = options;
 
   return {
-    buildQuery: buildQuery(resourceOptions),
+    buildQuery,
     introspection: {
       ...introspection,
       operationNames: {

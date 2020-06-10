@@ -1,4 +1,3 @@
-/* eslint-disable max-lines */
 import {
   GET_LIST,
   GET_MANY,
@@ -14,16 +13,22 @@ import {
   IntrospectionTypeRef,
   ASTNode,
   InlineFragmentNode,
-  ArgumentNode,
   IntrospectionField,
   DocumentNode,
   IntrospectionObjectType,
-  VariableDefinitionNode,
   IntrospectionInputValue
 } from "graphql";
 import * as gqlTypes from "graphql-ast-types-browser";
 import { isList, isRequired, getFinalType } from "./utils";
 import { IntrospectedSchema, FetchType } from "./ra-data-graphql";
+import {
+  ArgsBuilder,
+  MetaArgsBuilder,
+  GQLQueryBuilder,
+  ApolloArgsBuilder,
+  FieldsBuilder,
+  BuildGqlQueryImpl
+} from "./types";
 
 export const buildFragments = (introspectionResults: IntrospectedSchema) =>
   (possibleTypes: readonly IntrospectionTypeRef[]): readonly InlineFragmentNode[] =>
@@ -39,16 +44,14 @@ export const buildFragments = (introspectionResults: IntrospectedSchema) =>
         gqlTypes.inlineFragment(
           gqlTypes.selectionSet(
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-            buildFields(linkedType as IntrospectionObjectType)
+            buildFields(introspectionResults)(linkedType as IntrospectionObjectType)
           ),
           gqlTypes.namedType(gqlTypes.name(type.name))
         )
       ];
     }, []);
 
-export type FieldsBuilder = (type: IntrospectionObjectType) => readonly ASTNode[];
-
-export const buildFields: FieldsBuilder = (type) =>
+export const buildFields: FieldsBuilder = () => (type) =>
   type.fields.reduce((acc, field) => {
     const finalType = getFinalType(field.type);
 
@@ -91,7 +94,6 @@ export const getArgType = (arg: IntrospectionField | IntrospectionInputValue): A
   return gqlTypes.namedType(gqlTypes.name(type.name));
 };
 
-export type ArgsBuilder = (query: IntrospectionField, variables: Record<string, any>) => readonly ArgumentNode[];
 export const buildArgs: ArgsBuilder = (query, variables) => {
   if (query.args.length === 0) {
     return [];
@@ -116,12 +118,6 @@ export const buildArgs: ArgsBuilder = (query, variables) => {
 
   return args;
 };
-
-export type MetaArgsBuilder =  (
-  query: IntrospectionField,
-  variables: Record<string, any>,
-  aorFetchType: FetchType
-) => readonly ArgumentNode[];
 
 export const buildMetaArgs: MetaArgsBuilder = (query, variables, aorFetchType) => {
   if (query.args.length === 0) {
@@ -160,11 +156,6 @@ export const buildMetaArgs: MetaArgsBuilder = (query, variables, aorFetchType) =
   return args;
 };
 
-export type ApolloArgsBuilder = (
-  query: IntrospectionField,
-  variables: Record<string, any>
-) => readonly VariableDefinitionNode[];
-
 export const buildApolloArgs: ApolloArgsBuilder = (query, variables) => {
   if (query.args.length === 0) {
     return [];
@@ -187,21 +178,6 @@ export const buildApolloArgs: ApolloArgsBuilder = (query, variables) => {
   return args;
 };
 
-export type GQLQueryBuildHandler = (
-  resource: Record<string, any>,
-  aorFetchType: FetchType,
-  queryType: IntrospectionField,
-  variables: Record<string, any>
-) => DocumentNode;
-
-export type GQLQueryBuilder = (
-  _introspectionResults: IntrospectedSchema,
-  fieldsBuilder: FieldsBuilder,
-  metaArgsBuilder: MetaArgsBuilder,
-  argsBuilder: ArgsBuilder,
-  apolloArgsBuilder: ApolloArgsBuilder
-) => GQLQueryBuildHandler;
-
 export const buildGqlQuery: GQLQueryBuilder = (
   _introspectionResults,
   fieldsBuilder,
@@ -219,12 +195,9 @@ export const buildGqlQuery: GQLQueryBuilder = (
   const apolloArgs = apolloArgsBuilder(queryType, variables);
   const args = argsBuilder(queryType, variables);
   const metaArgs = metaArgsBuilder(queryType, metaVariables, aorFetchType);
-  const fields = fieldsBuilder(resource.type);
-  if (
-    aorFetchType === GET_LIST ||
-        aorFetchType === GET_MANY ||
-        aorFetchType === GET_MANY_REFERENCE
-  ) {
+  const fields = fieldsBuilder(_introspectionResults)(resource.type);
+
+  if ([GET_LIST, GET_MANY, GET_MANY_REFERENCE].includes(aorFetchType)) {
     return gqlTypes.document([
       gqlTypes.operationDefinition(
         "query",
@@ -235,8 +208,10 @@ export const buildGqlQuery: GQLQueryBuilder = (
             args,
             null,
             gqlTypes.selectionSet(fields)
-          ),
-          gqlTypes.field(
+          )
+        ].concat(
+          // GET_MANY doesn't need total count
+          aorFetchType === GET_MANY ? [] : gqlTypes.field(
             gqlTypes.name(`${queryType.name}_aggregate`),
             gqlTypes.name("total"),
             metaArgs,
@@ -253,7 +228,7 @@ export const buildGqlQuery: GQLQueryBuilder = (
               )
             ])
           )
-        ]),
+        )),
         gqlTypes.name(queryType.name),
         apolloArgs
       )
@@ -311,7 +286,6 @@ export const buildGqlQuery: GQLQueryBuilder = (
   ]);
 };
 
-export type BuildGqlQueryImpl = (introspectionResults: IntrospectedSchema) => GQLQueryBuildHandler;
 const defaultBuildGqlQuery: BuildGqlQueryImpl = (introspectionResults) =>
   buildGqlQuery(introspectionResults, buildFields, buildMetaArgs, buildArgs, buildApolloArgs);
 

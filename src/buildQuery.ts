@@ -1,8 +1,8 @@
-import buildVariables, { BuildVariablesImpl } from "./buildVariables";
-import buildGqlQuery, { BuildGqlQueryImpl } from "./buildGqlQuery";
+import buildVariables from "./buildVariables";
+import buildGqlQuery from "./buildGqlQuery";
 import getResponseParser, { ResponseParserGetter } from "./getResponseParser";
-import { IntrospectedSchema, FetchType } from "./ra-data-graphql";
-import { ResourceOptionsMap } from "./types";
+import { IntrospectedSchema, FetchType, QueryBuilder } from "./ra-data-graphql";
+import { HasuraGraphQLProviderOptions, BuildGqlQueryImpl, BuildVariablesImpl } from "./types";
 import {
   GET_LIST,
   GET_ONE,
@@ -15,11 +15,23 @@ import {
   DELETE_MANY
 } from "ra-core";
 
-const buildQueryFactory = (
+export type RAHasuraQueryBuilder = (
   buildVariablesImpl: BuildVariablesImpl,
   buildGqlQueryImpl: BuildGqlQueryImpl,
   getResponseParserImpl: ResponseParserGetter
-) => (resourceOptionsM: ResourceOptionsMap = {}) => (introspectionResults: IntrospectedSchema) => {
+) => QueryBuilder<HasuraGraphQLProviderOptions>;
+
+export const buildQueryFactory: RAHasuraQueryBuilder = (
+  buildVariablesImpl: BuildVariablesImpl,
+  buildGqlQueryImpl: BuildGqlQueryImpl,
+  getResponseParserImpl: ResponseParserGetter
+) => (
+  introspectionResults: IntrospectedSchema,
+  extraOptions: HasuraGraphQLProviderOptions
+) => {
+  const resourceOptionsM = extraOptions && extraOptions.resourceOptions
+    ? extraOptions.resourceOptions : {};
+
   const knownResources = introspectionResults.resources.map((r) => r.type.name);
 
   return (aorFetchType: FetchType, resourceName: string, params) => {

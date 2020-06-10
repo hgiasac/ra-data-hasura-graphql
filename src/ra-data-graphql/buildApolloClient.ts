@@ -1,3 +1,4 @@
+/* eslint-disable functional/no-expression-statement */
 /* eslint-disable functional/no-let */
 import { ApolloClient, ApolloClientOptions } from "apollo-client";
 import {

@@ -1,0 +1,26 @@
+{
+    "overrides": [
+        {
+            "files": [
+                "*.js",
+                "*.ts",
+                "*.tsx"
+            ],
+            "parserOptions": {
+                "project": "__tests__/tsconfig.json",
+                "sourceType": "module"
+            },
+            "globals": {
+                "cy": true,
+                "it": true
+            }
+        }
+    ],
+    "rules": {
+        "import/no-unresolved": 0,
+        "@typescript-eslint/explicit-function-return-type": 0,
+        "functional/immutable-data": 0,
+        "functional/no-expression-statement": 0,
+        "max-lines": 0
+    }
+}

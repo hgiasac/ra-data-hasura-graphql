@@ -1,3 +1,4 @@
+/* eslint-disable functional/no-expression-statement */
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 /* eslint-disable functional/no-let */
 /* eslint-disable functional/no-mixed-type */
@@ -62,6 +63,15 @@ const getOptions = (options, aorFetchType, resource): any => {
   return options;
 };
 
+export type QueryBuilder<OtherOptions = any> =  (
+  schema: IntrospectedSchema,
+  otherOptions?: OtherOptions
+) => (
+  raFetchType: FetchType,
+  resourceName: string,
+  params: GetListParams
+) => QueryHandler;
+
 export type GraphQLProviderOptions<OtherOptions = any> = {
   readonly client?: ApolloClient<unknown>
   readonly clientOptions?: BuildClientOptions<unknown>
@@ -70,14 +80,7 @@ export type GraphQLProviderOptions<OtherOptions = any> = {
     client: ApolloClient<unknown>,
     options: IntrospectionOptions
   ) => Promise<IntrospectedSchema> | IntrospectedSchema
-  readonly buildQuery: (
-    schema: IntrospectedSchema,
-    otherOptions: OtherOptions
-  ) => (
-    raFetchType: FetchType,
-    resourceName: string,
-    params: GetListParams
-  ) => QueryHandler
+  readonly buildQuery: QueryBuilder<OtherOptions>
   readonly query?:
   | QueryOptions
   | ((resource: string, raFetchType: FetchType) => QueryOptions)

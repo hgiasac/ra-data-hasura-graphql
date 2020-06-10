@@ -47,7 +47,7 @@ export const buildPrimaryKeyExp = (
   }
 
   return {
-    _and: data.map((d) => primaryKeys.reduce((acc, key) => ({
+    _or: data.map((d) => primaryKeys.reduce((acc, key) => ({
       ...acc,
       [key]: {
         _eq: d[key]
@@ -59,22 +59,24 @@ export const buildPrimaryKeyExp = (
 export const buildPrimaryKeyIdExp = (
   ids: readonly (string | number)[],
   primaryKeys?: readonly string[]
-): readonly Record<string, any>[] => {
+): Record<string, any> => {
 
   if (primaryKeys.length <= 1) {
     const key = primaryKeys.length ? primaryKeys[0] : "id";
 
-    return [{ [key]: ids.length === 1 ? { _eq: ids[0] } : { _in: ids } }];
+    return { [key]: ids.length === 1 ? { _eq: ids[0] } : { _in: ids } };
   }
 
-  return ids.map((id) => {
-    const idObject = JSON.parse(id as string);
+  return {
+    _or: ids.map((id) => {
+      const idObject = JSON.parse(id as string);
 
-    return primaryKeys.reduce((acc, key) => ({
-      ...acc,
-      [key]: {
-        _eq: idObject[key]
-      }
-    }), {});
-  });
+      return primaryKeys.reduce((acc, key) => ({
+        ...acc,
+        [key]: {
+          _eq: idObject[key]
+        }
+      }), {});
+    })
+  };
 };

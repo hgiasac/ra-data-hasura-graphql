@@ -27,11 +27,11 @@
     ],
     "license": "MIT",
     "scripts": {
-        "build": "webpack",
-        "compile": "npm run clean && tsc",
+        "build": "npm run clean && tsc",
         "clean": "rm -rf dist",
         "lint": "eslint --ext .js,.ts src",
-        "prepare": "npm run compile"
+        "prepare": "npm run build",
+        "test": "npm run lint && jest"
     },
     "dependencies": {
         "@types/lodash": "^4.14.155",
@@ -49,9 +49,9 @@
         "ra-core": "^3.6.0"
     },
     "devDependencies": {
+        "@types/jest": "^25.2.3",
         "@typescript-eslint/eslint-plugin": "^3.1.0",
         "@typescript-eslint/parser": "^3.1.0",
-        "@types/jest": "^25.2.3",
         "connected-react-router": "^6.8.0",
         "eslint": "^7.2.0",
         "eslint-import-resolver-typescript": "^2.0.0",
@@ -59,17 +59,40 @@
         "final-form": "^4.20.0",
         "final-form-arrays": "^3.0.2",
         "graphql": "^15.0.0",
+        "husky": "^4.2.5",
         "jest": "^26.0.1",
         "jsonexport": "^3.0.0",
         "ra-core": "^3.6.0",
-        "redux-saga": "^1.1.3",
         "react": "^16.13.1",
         "react-dom": "^16.13.1",
         "react-final-form": "^6.5.0",
         "react-redux": "^7.2.0",
         "react-router-dom": "^5.2.0",
+        "redux-saga": "^1.1.3",
+        "ts-jest": "^26.1.0",
         "typescript": "^3.9.5",
         "webpack": "^4.41.4",
         "webpack-cli": "^3.3.10"
+    },
+    "jest": {
+        "preset": "ts-jest/presets/js-with-ts",
+        "testMatch": ["<rootDir>/__tests__/**/*.ts"],
+        "testPathIgnorePatterns": [
+            "<rootDir>/node_modules/",
+            "<rootDir>/lib/"
+        ],
+        "transformIgnorePatterns": [
+            "[/\\\\]node_modules[/\\\\].+\\.(js|jsx|mjs|ts|tsx)$"
+        ],
+        "globals": {
+            "ts-jest": {
+                "isolatedModules": true
+            }
+        },
+        "collectCoverage": true,
+        "verbose": true
+    },
+    "husky": {
+        "pre-commit": "npm test"
     }
 }
