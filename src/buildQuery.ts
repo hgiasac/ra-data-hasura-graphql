@@ -42,7 +42,7 @@ export const buildQueryFactory: HasuraQueryBuilder = (
   const knownResources = introspectionResults.resources.map((r) => r.type.name);
 
   return (aorFetchType: HasuraFetchType, resourceName: string, params) => {
-    const resourceOptions = resourceOptionsM[resourceName] || {};
+    const resourceOptions = resourceOptionsM[resourceName];
     const resourceAlias = resourceOptions.alias || resourceName;
 
     const resource = introspectionResults.resources.find(

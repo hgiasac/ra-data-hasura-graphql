@@ -1,11 +1,12 @@
-import { IntrospectedSchema, QueryBuilder, GraphQLDataProvider } from "./ra-data-graphql";
+import { IntrospectedSchema, QueryBuilder, GraphQLDataProvider, IntrospectionOptions } from "./ra-data-graphql";
 import {
   IntrospectionField,
   DocumentNode,
   ArgumentNode,
   IntrospectionObjectType,
   ASTNode,
-  VariableDefinitionNode
+  VariableDefinitionNode,
+  IntrospectionType
 } from "graphql";
 import {
   GetListParams,
@@ -34,6 +35,10 @@ type FilterExpOptions
   = Record<string, FilterFieldExpOption>
   | FilterFunctionExpOption;
 
+export type HasuraIntrospectionOptions = IntrospectionOptions & {
+  readonly operationNames: { [Op in HasuraFetchType]?: (type: IntrospectionType) => string }
+};
+
 export type ResourceOptions = {
   readonly alias?: string
   readonly primaryKeys?: readonly string[]
@@ -43,6 +48,7 @@ export type ResourceOptions = {
 export type ResourceOptionsMap = Record<string, ResourceOptions>;
 
 export type HasuraGraphQLProviderOptions = {
+  readonly introspection: HasuraIntrospectionOptions
   readonly resourceOptions?: ResourceOptionsMap
   readonly subscription?: Partial<SubscriptionOptions<unknown>>
 };
