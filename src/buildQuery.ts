@@ -1,15 +1,7 @@
 import buildVariables from "./buildVariables";
 import buildGqlQuery from "./buildGqlQuery";
 import getResponseParser from "./getResponseParser";
-import { IntrospectedSchema } from "./ra-data-graphql";
-import {
-  HasuraGraphQLProviderOptions,
-  BuildGqlQueryImpl,
-  BuildVariablesImpl,
-  ResponseParserImpl,
-  HasuraQueryBuilder,
-  ResourceOptions
-} from "./types";
+import { HasuraQueryBuilder, ResourceOptions } from "./types";
 import {
   WATCH_LIST,
   WATCH_MANY_REFERENCE,
@@ -30,13 +22,10 @@ import {
 } from "ra-core";
 
 export const buildQueryFactory: HasuraQueryBuilder = (
-  buildVariablesImpl: BuildVariablesImpl,
-  buildGqlQueryImpl: BuildGqlQueryImpl,
-  getResponseParserImpl: ResponseParserImpl
-) => (
-  introspectionResults: IntrospectedSchema,
-  extraOptions: HasuraGraphQLProviderOptions
-) => {
+  buildVariablesImpl,
+  buildGqlQueryImpl,
+  getResponseParserImpl
+) => (introspectionResults, extraOptions) => {
   const resourceOptionsMap = extraOptions && extraOptions.resourceOptions
     ? extraOptions.resourceOptions : {};
 
@@ -50,6 +39,7 @@ export const buildQueryFactory: HasuraQueryBuilder = (
       (r) => r.type.name === resourceAlias
     );
 
+    // skip checking resource when parseResponseOnly option is true
     if (!resource) {
       const preMessage =
         `Unknown resource '${resourceName}'${resourceOptions.alias ? `, alias of '${resourceAlias}'` : ""}. `;
@@ -69,7 +59,7 @@ export const buildQueryFactory: HasuraQueryBuilder = (
 
     const queryType = resource[aorFetchType];
 
-    if (!queryType) {
+    if (!queryType && !extraOptions.parseResponseOnly) {
       const throwError = (queryTy: string, sqlTy?: string): never => {
         throw new Error(
           `No ${queryTy} matching fetch type could be found for resource ${resource.type.name}. ${
@@ -100,19 +90,19 @@ export const buildQueryFactory: HasuraQueryBuilder = (
       }
     }
 
-    const variables = buildVariablesImpl(introspectionResults)(
+    const variables = !extraOptions.parseResponseOnly ? buildVariablesImpl(introspectionResults)(
       resource,
       aorFetchType,
       params,
       queryType,
       resourceOptions
-    );
-    const query = buildGqlQueryImpl(introspectionResults)(
+    ) : undefined;
+    const query = !extraOptions.parseResponseOnly ?  buildGqlQueryImpl(introspectionResults)(
       resource,
       aorFetchType,
       queryType,
       variables
-    );
+    ) : undefined;
     const parseResponse = getResponseParserImpl(introspectionResults)(
       aorFetchType,
       resourceName,

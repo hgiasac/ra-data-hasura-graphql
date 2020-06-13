@@ -32,6 +32,16 @@ describe("buildQuery", () => {
     );
   });
 
+  it("don't throws any error if we only return response parser", () => {
+    expect(defaultQuery(introspectionResults, {
+      ...otherOptions,
+      parseResponseOnly: true
+    })("CREATE", "Post", {} as any)
+    ).toEqual({
+      parseResponse: expect.any(Function)
+    });
+  });
+
   it("correctly builds a query and returns it along with variables and parseResponse", () => {
     const buildVariables = jest.fn(() => ({ foo: true }));
     const buildGqlQuery = jest.fn(

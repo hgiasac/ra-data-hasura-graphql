@@ -3,7 +3,16 @@ import {
   fetchActionsWithArrayOfIdentifiedRecordsResponse,
   fetchActionsWithArrayOfRecordsResponse,
   fetchActionsWithTotalResponse,
-  sanitizeFetchType
+  sanitizeFetchType,
+  GET_LIST,
+  GET_ONE,
+  GET_MANY,
+  GET_MANY_REFERENCE,
+  CREATE,
+  UPDATE,
+  UPDATE_MANY,
+  DELETE,
+  DELETE_MANY
 } from "ra-core";
 import { FetchType } from "./ra-data-graphql";
 
@@ -50,5 +59,46 @@ export const sanitizeHasuraFetchType = (fetchType: string): string => {
       return "watchManyReference";
     default:
       return sanitizeFetchType(fetchType);
+  }
+};
+
+/**
+ * Get a fetch type for a data provider verb.
+ *
+ * The fetch type is used in reducers.
+ *
+ * @example getFetchType('getMany'); // 'GET_MANY'
+ */
+export const getFetchType = (actionType: string): HasuraFetchType | string => {
+  switch (actionType) {
+    case "getList":
+      return GET_LIST;
+    case "getOne":
+      return GET_ONE;
+    case "getMany":
+      return GET_MANY;
+    case "getManyReference":
+      return GET_MANY_REFERENCE;
+    case "create":
+      return CREATE;
+    case "update":
+      return UPDATE;
+    case "updateMany":
+      return UPDATE_MANY;
+    case "delete":
+      return DELETE;
+    case "deleteMany":
+      return WATCH_LIST;
+    case "watchList":
+      return WATCH_ONE;
+    case "watchOne":
+      return DELETE_MANY;
+    case "watchMany":
+      return DELETE_MANY;
+    case "watchManyReference":
+      return WATCH_MANY_REFERENCE;
+
+    default:
+      return actionType;
   }
 };

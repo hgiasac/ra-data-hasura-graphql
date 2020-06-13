@@ -29,7 +29,7 @@ import {
   DeleteManyResult
 } from "ra-core";
 import { HasuraFetchType } from "./fetchDataAction";
-import { SubscriptionOptions } from "apollo-client";
+import ApolloClient, { SubscriptionOptions } from "apollo-client";
 import { Observable } from "apollo-client/util/Observable";
 
 export type HasuraGraphQLResponse<T extends Record<string, any> = Record<string, any>> =
@@ -58,36 +58,38 @@ export type HasuraIntrospectionOptions = IntrospectionOptions & {
   readonly operationNames: { [Op in HasuraFetchType]?: (type: IntrospectionType) => string }
 };
 
-export type ResourceCustomActions = {
-  readonly getList?: (params: GetListParams) => Promise<GetListResult>
-  readonly getOne?: (params: GetOneParams) => Promise<GetOneResult>
-  readonly getMany?: (params: GetManyParams) => Promise<GetManyResult>
-  readonly getManyReference?: (params: GetManyReferenceParams) => Promise<GetManyReferenceResult>
-  readonly update?: (params: UpdateParams) => Promise<UpdateResult>
-  readonly updateMany?: (params: UpdateManyParams) => Promise<UpdateManyResult>
-  readonly create?: (params: CreateParams) => Promise<CreateResult>
-  readonly delete?: (params: DeleteParams) => Promise<DeleteResult>
-  readonly deleteMany?: (params: DeleteManyParams) => Promise<DeleteManyResult>
-  readonly watchList?: (params: WatchListParams) => Observable<WatchListResult>
-  readonly watchOne?: (params: WatchOneParams) => Observable<WatchOneResult>
-  readonly watchMany?: (resource: string, params: WatchManyParams) => Observable<WatchManyResult>
-  readonly watchManyReference?: (
-    resource: string,
-    params: WatchManyReferenceParams
-  )=> Observable<WatchManyReferenceResult>
+export type CustomResourceActionOptions<TCache = unknown> = {
+  readonly client: ApolloClient<TCache>
+  readonly parseResponse: ParseResponseFunction
+};
+
+export type CustomResourceActions<Op extends CustomResourceActionOptions = CustomResourceActionOptions> = {
+  readonly getList?: (params: GetListParams, options: Op) => Promise<GetListResult>
+  readonly getOne?: (params: GetOneParams, options: Op) => Promise<GetOneResult>
+  readonly getMany?: (params: GetManyParams, options: Op) => Promise<GetManyResult>
+  readonly getManyReference?: (params: GetManyReferenceParams, options: Op) => Promise<GetManyReferenceResult>
+  readonly update?: (params: UpdateParams, options: Op) => Promise<UpdateResult>
+  readonly updateMany?: (params: UpdateManyParams, options: Op) => Promise<UpdateManyResult>
+  readonly create?: (params: CreateParams, options: Op) => Promise<CreateResult>
+  readonly delete?: (params: DeleteParams, options: Op) => Promise<DeleteResult>
+  readonly deleteMany?: (params: DeleteManyParams, options: Op) => Promise<DeleteManyResult>
+  readonly watchList?: (params: WatchListParams, options: Op) => Observable<WatchListResult>
+  readonly watchOne?: (params: WatchOneParams, options: Op) => Observable<WatchOneResult>
+  readonly watchMany?: (params: WatchManyParams, options: Op) => Observable<WatchManyResult>
+  readonly watchManyReference?: (params: WatchManyReferenceParams, options: Op)=> Observable<WatchManyReferenceResult>
 };
 
 export type ResourceOptions = {
   readonly alias?: string
   readonly primaryKeys?: readonly string[]
   readonly filterExps?: FilterExpOptions
-  readonly customActions?: ResourceCustomActions
+  readonly customActions?: CustomResourceActions
 };
 
 export type ResourceOptionsMap = Record<string, ResourceOptions>;
 
 export type HasuraGraphQLProviderOptions = {
-  readonly introspection: HasuraIntrospectionOptions
+  readonly introspection?: HasuraIntrospectionOptions
   readonly resourceOptions?: ResourceOptionsMap
   readonly subscription?: Partial<SubscriptionOptions<unknown>>
 };
@@ -151,17 +153,17 @@ export type GQLQueryBuilder = (
 
 export type BuildGqlQueryImpl = (introspectionResults: IntrospectedSchema) => GQLQueryBuildHandler;
 
+export type ParseResponseFunction = (res: HasuraGraphQLResponse) => Record<string, any>;
+
 export type ResponseParserImpl = (
   introspectionResults: IntrospectedSchema
-) => (aorFetchType: HasuraFetchType, resourceName: string, resourceOptions: ResourceOptions) => (
-  res: HasuraGraphQLResponse
-) => Record<string, any>;
+) => (aorFetchType: HasuraFetchType, resourceName: string, resourceOptions: ResourceOptions) => ParseResponseFunction;
 
 export type HasuraQueryBuilder = (
   buildVariablesImpl: BuildVariablesImpl,
   buildGqlQueryImpl: BuildGqlQueryImpl,
   getResponseParserImpl: ResponseParserImpl
-) => QueryBuilder<HasuraGraphQLProviderOptions>;
+) => QueryBuilder<HasuraGraphQLProviderOptions & { readonly parseResponseOnly?: boolean }>;
 
 export type HasuraDataProvider = GraphQLDataProvider & {
   readonly watchList: (resource: string, params: GetListParams) => Observable<GetListResult>

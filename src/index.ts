@@ -35,7 +35,8 @@ import {
   WATCH_MANY,
   WATCH_MANY_REFERENCE,
   HasuraFetchType,
-  sanitizeHasuraFetchType
+  sanitizeHasuraFetchType,
+  getFetchType
 } from "./fetchDataAction";
 import { Observable } from "apollo-client/util/Observable";
 export * from "./fetchDataAction";
@@ -115,12 +116,32 @@ export default <Options extends Record<string, any> = Record<string, any>>(
         watchManyReference: (resource, params) => watchHandler(WATCH_MANY_REFERENCE, resource, params)
       };
 
-      const getAction = (key) => (resource, params) =>
-        options.resourceOptions && options.resourceOptions[resource]
-          && options.resourceOptions[resource].customActions
-          && options.resourceOptions[resource].customActions[key]
-          ? options.resourceOptions[resource].customActions[key](params)
-          : newDataProvider[key](resource, params);
+      const getAction = (key) => (resource, params) => {
+        if (!options.resourceOptions
+          || !options.resourceOptions[resource]
+          || !options.resourceOptions[resource].customActions
+          || !options.resourceOptions[resource].customActions[key]) {
+          return newDataProvider[key](resource, params);
+        }
+
+        const aorFetchType = getFetchType(key);
+        const buildQueryFn = buildQueryImpl(dataProvider.introspectedSchema, {
+          ...otherOptions,
+          parseResponseOnly: true
+        });
+        const { parseResponse = null } = buildQueryFn(aorFetchType as FetchType, resource, params);
+
+        if (!parseResponse) {
+          throw new Error(
+            `Missing '${sanitizeHasuraFetchType(aorFetchType)}' in the override option`
+          );
+        }
+
+        return options.resourceOptions[resource].customActions[key](params, {
+          client: options.client,
+          parseResponse
+        });
+      };
 
       return Object.keys(newDataProvider)
         .map((key) => getAction(key));
