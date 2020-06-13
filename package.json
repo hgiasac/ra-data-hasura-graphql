@@ -95,6 +95,9 @@
         "verbose": true
     },
     "husky": {
-        "pre-commit": "npm test && npm run build"
+        "hooks": {
+            "pre-commit": "npm test && npm run build",
+            "pre-push": "npm test && npm run build"
+        }
     }
 }

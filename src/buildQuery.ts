@@ -37,13 +37,13 @@ export const buildQueryFactory: HasuraQueryBuilder = (
   introspectionResults: IntrospectedSchema,
   extraOptions: HasuraGraphQLProviderOptions
 ) => {
-  const resourceOptionsM = extraOptions && extraOptions.resourceOptions
+  const resourceOptionsMap = extraOptions && extraOptions.resourceOptions
     ? extraOptions.resourceOptions : {};
 
   const knownResources = introspectionResults.resources.map((r) => r.type.name);
 
   return (aorFetchType: HasuraFetchType, resourceName: string, params) => {
-    const resourceOptions = resourceOptionsM[resourceName] || {} as ResourceOptions;
+    const resourceOptions = resourceOptionsMap[resourceName] || {} as ResourceOptions;
     const resourceAlias = resourceOptions.alias || resourceName;
 
     const resource = introspectionResults.resources.find(

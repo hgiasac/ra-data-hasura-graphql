@@ -16,7 +16,17 @@ import {
   GetListResult,
   GetOneResult,
   GetManyResult,
-  GetManyReferenceResult
+  GetManyReferenceResult,
+  UpdateParams,
+  UpdateManyParams,
+  CreateParams,
+  DeleteParams,
+  DeleteManyParams,
+  UpdateResult,
+  UpdateManyResult,
+  CreateResult,
+  DeleteResult,
+  DeleteManyResult
 } from "ra-core";
 import { HasuraFetchType } from "./fetchDataAction";
 import { SubscriptionOptions } from "apollo-client";
@@ -35,14 +45,43 @@ type FilterExpOptions
   = Record<string, FilterFieldExpOption>
   | FilterFunctionExpOption;
 
+export type WatchListParams = GetListParams;
+export type WatchOneParams = GetOneParams;
+export type WatchManyParams = GetManyParams;
+export type WatchManyReferenceParams = GetManyReferenceParams;
+export type WatchListResult = GetListResult;
+export type WatchOneResult = GetOneResult;
+export type WatchManyResult = GetManyResult;
+export type WatchManyReferenceResult = GetManyReferenceResult;
+
 export type HasuraIntrospectionOptions = IntrospectionOptions & {
   readonly operationNames: { [Op in HasuraFetchType]?: (type: IntrospectionType) => string }
+};
+
+export type ResourceCustomActions = {
+  readonly getList?: (params: GetListParams) => Promise<GetListResult>
+  readonly getOne?: (params: GetOneParams) => Promise<GetOneResult>
+  readonly getMany?: (params: GetManyParams) => Promise<GetManyResult>
+  readonly getManyReference?: (params: GetManyReferenceParams) => Promise<GetManyReferenceResult>
+  readonly update?: (params: UpdateParams) => Promise<UpdateResult>
+  readonly updateMany?: (params: UpdateManyParams) => Promise<UpdateManyResult>
+  readonly create?: (params: CreateParams) => Promise<CreateResult>
+  readonly delete?: (params: DeleteParams) => Promise<DeleteResult>
+  readonly deleteMany?: (params: DeleteManyParams) => Promise<DeleteManyResult>
+  readonly watchList?: (params: WatchListParams) => Observable<WatchListResult>
+  readonly watchOne?: (params: WatchOneParams) => Observable<WatchOneResult>
+  readonly watchMany?: (resource: string, params: WatchManyParams) => Observable<WatchManyResult>
+  readonly watchManyReference?: (
+    resource: string,
+    params: WatchManyReferenceParams
+  )=> Observable<WatchManyReferenceResult>
 };
 
 export type ResourceOptions = {
   readonly alias?: string
   readonly primaryKeys?: readonly string[]
   readonly filterExps?: FilterExpOptions
+  readonly customActions?: ResourceCustomActions
 };
 
 export type ResourceOptionsMap = Record<string, ResourceOptions>;

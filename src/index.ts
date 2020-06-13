@@ -107,13 +107,23 @@ export default <Options extends Record<string, any> = Record<string, any>>(
 
       };
 
-      return {
+      const newDataProvider = {
         ...dataProvider,
         watchList: (resource, params) => watchHandler(WATCH_LIST, resource, params),
         watchMany: (resource, params) => watchHandler(WATCH_MANY, resource, params),
         watchOne: (resource, params) => watchHandler(WATCH_ONE, resource, params),
         watchManyReference: (resource, params) => watchHandler(WATCH_MANY_REFERENCE, resource, params)
       };
+
+      const getAction = (key) => (resource, params) =>
+        options.resourceOptions && options.resourceOptions[resource]
+          && options.resourceOptions[resource].customActions
+          && options.resourceOptions[resource].customActions[key]
+          ? options.resourceOptions[resource].customActions[key](params)
+          : newDataProvider[key](resource, params);
+
+      return Object.keys(newDataProvider)
+        .map((key) => getAction(key));
     });
 
 const getOptions = (options, aorFetchType, resource): any => {
