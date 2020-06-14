@@ -152,8 +152,22 @@ export type GQLQueryBuilder = (
 ) => GQLQueryBuildHandler;
 
 export type BuildGqlQueryImpl = (introspectionResults: IntrospectedSchema) => GQLQueryBuildHandler;
+export type ParseReponseResult
+  = GetListResult
+  | GetOneResult
+  | GetManyResult
+  | GetManyReferenceResult
+  | CreateResult
+  | UpdateResult
+  | UpdateManyResult
+  | DeleteResult
+  | DeleteManyResult
+  | WatchManyResult
+  | WatchListResult
+  | WatchOneResult
+  | WatchManyReferenceResult;
 
-export type ParseResponseFunction = (res: HasuraGraphQLResponse) => Record<string, any>;
+export type ParseResponseFunction = (res: HasuraGraphQLResponse) => ParseReponseResult;
 
 export type ResponseParserImpl = (
   introspectionResults: IntrospectedSchema
