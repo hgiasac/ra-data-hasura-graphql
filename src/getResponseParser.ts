@@ -69,7 +69,7 @@ const sanitizeResource = (data = {}): Record<string, any> => {
 
 const parseResponse: ResponseParserImpl = () =>
   (aorFetchType: HasuraFetchType, resourceName: string, resourceOptions: ResourceOptions) =>
-    (res: HasuraGraphQLResponse): Record<string, any>  => {
+    (res: HasuraGraphQLResponse): any => {
       const response = res.data;
       const { primaryKeys = [] } = resourceOptions;
       // react-admin use id as primary key as default. Most of features don't work without id
