@@ -76,15 +76,17 @@ function hasuraGraphQLOptions<Options extends Record<string, any> = Record<strin
 
 export default <Options extends Record<string, any> = Record<string, any>>(
   options: Options & Partial<ProviderOptions>
-): Promise<HasuraDataProvider> =>
-  buildDataProvider(hasuraGraphQLOptions(options))
+): Promise<HasuraDataProvider> => {
+  const hasuraOptions = hasuraGraphQLOptions(options);
+
+  return buildDataProvider(hasuraOptions)
     .then((dataProvider): any => {
 
       // require Apollo client in options
-      if (!options || !options.client) {
+      if (!hasuraOptions.client) {
         throw new Error("Apollo client option is required");
       }
-      const { client, buildQuery: buildQueryImpl, ...otherOptions } = options as ProviderOptions;
+      const { client, buildQuery: buildQueryImpl, ...otherOptions } = hasuraOptions;
 
       const watchHandler = (aorFetchType: HasuraFetchType, resource: string, params: any): Observable<any> => {
         const buildQueryFn = buildQueryImpl(dataProvider.introspectedSchema, otherOptions);
@@ -92,7 +94,7 @@ export default <Options extends Record<string, any> = Record<string, any>>(
 
         if (!parseResponse) {
           throw new Error(
-            `Missing '${sanitizeHasuraFetchType(aorFetchType)}' in the override option`
+          `Missing '${sanitizeHasuraFetchType(aorFetchType)}' in the override option`
           );
         }
 
@@ -118,9 +120,9 @@ export default <Options extends Record<string, any> = Record<string, any>>(
 
       const getAction = (key) => (resource, params) => {
         if (!options.resourceOptions
-          || !options.resourceOptions[resource]
-          || !options.resourceOptions[resource].customActions
-          || !options.resourceOptions[resource].customActions[key]) {
+        || !options.resourceOptions[resource]
+        || !options.resourceOptions[resource].customActions
+        || !options.resourceOptions[resource].customActions[key]) {
           return newDataProvider[key](resource, params);
         }
 
@@ -133,12 +135,12 @@ export default <Options extends Record<string, any> = Record<string, any>>(
 
         if (!parseResponse) {
           throw new Error(
-            `Missing '${sanitizeHasuraFetchType(aorFetchType)}' in the override option`
+          `Missing '${sanitizeHasuraFetchType(aorFetchType)}' in the override option`
           );
         }
 
-        return options.resourceOptions[resource].customActions[key](params, {
-          client: options.client,
+        return hasuraOptions.resourceOptions[resource].customActions[key](params, {
+          client: hasuraOptions.client,
           parseResponse
         });
       };
@@ -149,6 +151,7 @@ export default <Options extends Record<string, any> = Record<string, any>>(
           [key]: getAction(key)
         }), {});
     });
+};
 
 const getOptions = (options, aorFetchType, resource): any => {
   if (typeof options === "function") {
