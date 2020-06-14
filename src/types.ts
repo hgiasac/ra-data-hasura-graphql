@@ -71,10 +71,11 @@ export type ParseReponseResult
 export type HasuraIntrospectionOptions = IntrospectionOptions & {
   readonly operationNames: { [Op in HasuraFetchType]?: (type: IntrospectionType) => string }
 };
+export type ParseResponseFunction<R = ParseReponseResult> = (res: HasuraGraphQLResponse) => R;
 
-export type CustomResourceActionOptions<PR = ParseResponseFunction, TCache = unknown> = {
+export type CustomResourceActionOptions<PR = ParseReponseResult, TCache = unknown> = {
   readonly client: ApolloClient<TCache>
-  readonly parseResponse: PR
+  readonly parseResponse: ParseResponseFunction<PR>
 };
 
 export type CustomResourceActions = {
@@ -205,8 +206,6 @@ export type GQLQueryBuilder = (
 ) => GQLQueryBuildHandler;
 
 export type BuildGqlQueryImpl = (introspectionResults: IntrospectedSchema) => GQLQueryBuildHandler;
-
-export type ParseResponseFunction = (res: HasuraGraphQLResponse) => ParseReponseResult;
 
 export type ResponseParserImpl = (
   introspectionResults: IntrospectedSchema
