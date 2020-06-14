@@ -53,30 +53,83 @@ export type WatchListResult = GetListResult;
 export type WatchOneResult = GetOneResult;
 export type WatchManyResult = GetManyResult;
 export type WatchManyReferenceResult = GetManyReferenceResult;
+export type ParseReponseResult
+  = GetListResult
+  | GetOneResult
+  | GetManyResult
+  | GetManyReferenceResult
+  | CreateResult
+  | UpdateResult
+  | UpdateManyResult
+  | DeleteResult
+  | DeleteManyResult
+  | WatchManyResult
+  | WatchListResult
+  | WatchOneResult
+  | WatchManyReferenceResult;
 
 export type HasuraIntrospectionOptions = IntrospectionOptions & {
   readonly operationNames: { [Op in HasuraFetchType]?: (type: IntrospectionType) => string }
 };
 
-export type CustomResourceActionOptions<TCache = unknown> = {
+export type CustomResourceActionOptions<PR = ParseResponseFunction, TCache = unknown> = {
   readonly client: ApolloClient<TCache>
-  readonly parseResponse: ParseResponseFunction
+  readonly parseResponse: PR
 };
 
-export type CustomResourceActions<Op extends CustomResourceActionOptions = CustomResourceActionOptions> = {
-  readonly getList?: (params: GetListParams, options: Op) => Promise<GetListResult>
-  readonly getOne?: (params: GetOneParams, options: Op) => Promise<GetOneResult>
-  readonly getMany?: (params: GetManyParams, options: Op) => Promise<GetManyResult>
-  readonly getManyReference?: (params: GetManyReferenceParams, options: Op) => Promise<GetManyReferenceResult>
-  readonly update?: (params: UpdateParams, options: Op) => Promise<UpdateResult>
-  readonly updateMany?: (params: UpdateManyParams, options: Op) => Promise<UpdateManyResult>
-  readonly create?: (params: CreateParams, options: Op) => Promise<CreateResult>
-  readonly delete?: (params: DeleteParams, options: Op) => Promise<DeleteResult>
-  readonly deleteMany?: (params: DeleteManyParams, options: Op) => Promise<DeleteManyResult>
-  readonly watchList?: (params: WatchListParams, options: Op) => Observable<WatchListResult>
-  readonly watchOne?: (params: WatchOneParams, options: Op) => Observable<WatchOneResult>
-  readonly watchMany?: (params: WatchManyParams, options: Op) => Observable<WatchManyResult>
-  readonly watchManyReference?: (params: WatchManyReferenceParams, options: Op)=> Observable<WatchManyReferenceResult>
+export type CustomResourceActions = {
+  readonly getList?: (
+    params: GetListParams,
+    options: CustomResourceActionOptions<GetListResult>
+  ) => Promise<GetListResult>
+  readonly getOne?: (
+    params: GetOneParams,
+    options: CustomResourceActionOptions<GetOneResult>
+  ) => Promise<GetOneResult>
+  readonly getMany?: (
+    params: GetManyParams,
+    options: CustomResourceActionOptions<GetManyResult>
+  ) => Promise<GetManyResult>
+  readonly getManyReference?: (
+    params: GetManyReferenceParams,
+    options: CustomResourceActionOptions<GetManyReferenceResult>
+  ) => Promise<GetManyReferenceResult>
+  readonly update?: (
+    params: UpdateParams,
+    options: CustomResourceActionOptions<UpdateResult>
+  ) => Promise<UpdateResult>
+  readonly updateMany?: (
+    params: UpdateManyParams,
+    options: CustomResourceActionOptions<UpdateManyResult>
+  ) => Promise<UpdateManyResult>
+  readonly create?: (
+    params: CreateParams,
+    options: CustomResourceActionOptions<CreateResult>
+  ) => Promise<CreateResult>
+  readonly delete?: (
+    params: DeleteParams,
+    options: CustomResourceActionOptions<DeleteResult>
+  ) => Promise<DeleteResult>
+  readonly deleteMany?: (
+    params: DeleteManyParams,
+    options: CustomResourceActionOptions<DeleteManyResult>
+  ) => Promise<DeleteManyResult>
+  readonly watchList?: (
+    params: WatchListParams,
+    options: CustomResourceActionOptions<WatchListResult>
+  ) => Observable<WatchListResult>
+  readonly watchOne?: (
+    params: WatchOneParams,
+    options: CustomResourceActionOptions<WatchOneResult>
+  ) => Observable<WatchOneResult>
+  readonly watchMany?: (
+    params: WatchManyParams,
+    options: CustomResourceActionOptions<WatchManyResult>
+  ) => Observable<WatchManyResult>
+  readonly watchManyReference?: (
+    params: WatchManyReferenceParams,
+    options: CustomResourceActionOptions<WatchManyReferenceResult>
+  )=> Observable<WatchManyReferenceResult>
 };
 
 export type ResourceOptions = {
@@ -152,20 +205,6 @@ export type GQLQueryBuilder = (
 ) => GQLQueryBuildHandler;
 
 export type BuildGqlQueryImpl = (introspectionResults: IntrospectedSchema) => GQLQueryBuildHandler;
-export type ParseReponseResult
-  = GetListResult
-  | GetOneResult
-  | GetManyResult
-  | GetManyReferenceResult
-  | CreateResult
-  | UpdateResult
-  | UpdateManyResult
-  | DeleteResult
-  | DeleteManyResult
-  | WatchManyResult
-  | WatchListResult
-  | WatchOneResult
-  | WatchManyReferenceResult;
 
 export type ParseResponseFunction = (res: HasuraGraphQLResponse) => ParseReponseResult;
 
