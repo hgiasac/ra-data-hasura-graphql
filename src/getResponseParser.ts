@@ -1,3 +1,4 @@
+/* eslint-disable no-case-declarations */
 import {
   GET_LIST,
   GET_MANY,
@@ -9,7 +10,14 @@ import {
   UPDATE_MANY,
   DELETE_MANY
 } from "ra-core";
-import { ResponseParserImpl } from "./types";
+import {
+  ResponseParserImpl,
+  GetListRawResult,
+  GetManyRawResult,
+  GetOneRawResult,
+  CreateRawResult,
+  DeleteManyRawResult
+} from "./types";
 import {
   WATCH_LIST,
   WATCH_MANY_REFERENCE,
@@ -63,8 +71,7 @@ const sanitizeResource = (data = {}): Record<string, any> => {
 };
 
 const parseResponse: ResponseParserImpl = () =>
-  (aorFetchType, resourceName, resourceOptions) => (res) => {
-    const response = res.data;
+  (aorFetchType, resourceName, resourceOptions) => (res): any => {
     const { primaryKeys = [] } = resourceOptions;
     // react-admin use id as primary key as default. Most of features don't work without id
     // in this case, to support non-id primary key column, or composite primary keys
@@ -111,34 +118,44 @@ const parseResponse: ResponseParserImpl = () =>
       case GET_LIST:
       case WATCH_LIST:
       case WATCH_MANY_REFERENCE:
+        const { data: getListData } = res as GetListRawResult;
+
         return {
-          data: response.items.map((record) => sanitizeResource(serializeItemId(record))),
-          total: response.total.aggregate.count
+          data: getListData.items.map((record) => sanitizeResource(serializeItemId(record))),
+          total: getListData.total.aggregate.count
         };
 
       case GET_MANY:
       case WATCH_MANY:
+        const { data: getManyData } = res as GetManyRawResult;
+
         return {
-          data: response.items.map((record) => sanitizeResource(serializeItemId(record)))
+          data: getManyData.items.map((record) => sanitizeResource(serializeItemId(record)))
         };
 
       case GET_ONE:
       case WATCH_ONE:
+        const { data: getOneData } = res as GetOneRawResult;
+
         return {
-          data: sanitizeResource(serializeItemId(response.returning[0]))
+          data: sanitizeResource(serializeItemId(getOneData.returning[0]))
         };
 
       case CREATE:
       case UPDATE:
       case DELETE:
+        const { data: mutationRawResult } = res as CreateRawResult;
+
         return {
-          data: sanitizeResource(serializeItemId(response.data.returning[0]))
+          data: sanitizeResource(serializeItemId(mutationRawResult.data.returning[0]))
         };
 
       case UPDATE_MANY:
       case DELETE_MANY:
+        const { data: manyRawResult } = res as DeleteManyRawResult;
+
         return {
-          data: response.data.returning.map((x) => serializeItemId(x).id)
+          data: manyRawResult.data.returning.map((x) => serializeItemId(x).id)
         };
 
       default:

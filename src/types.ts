@@ -32,9 +32,6 @@ import { HasuraFetchType } from "./fetchDataAction";
 import ApolloClient, { SubscriptionOptions } from "apollo-client";
 import { Observable } from "apollo-client/util/Observable";
 
-export type HasuraGraphQLResponse<T extends Record<string, any> = Record<string, any>> =
-  { readonly data: T };
-
 type BoolExp = Record<string, unknown>;
 
 type FilterFieldExpOption<V = any> = (value: V) => BoolExp;
@@ -45,6 +42,38 @@ type FilterExpOptions
   = Record<string, FilterFieldExpOption>
   | FilterFunctionExpOption;
 
+export type HasuraGraphQLResponse<T extends Record<string, any> = Record<string, any>> =
+  { readonly data: T };
+
+export type GetListRawResult<I extends Record<string, any> = Record<string, any>> = HasuraGraphQLResponse<{
+  readonly items: readonly I[]
+  readonly total: {
+    readonly aggregate: {
+      readonly count: number
+    }
+  }
+}>;
+export type GetManyReferenceRawResult<I extends Record<string, any> = Record<string, any>> = GetListRawResult<I>;
+export type WatchListRawResult<I extends Record<string, any> = Record<string, any>> = GetListRawResult<I>;
+export type WatchManyReferenceRawResult<I extends Record<string, any> = Record<string, any>> = GetListRawResult<I>;
+export type GetManyRawResult<I extends Record<string, any> = Record<string, any>> = HasuraGraphQLResponse<{
+  readonly items: readonly I[]
+}>;
+export type WatchManyRawResult<I extends Record<string, any> = Record<string, any>> = GetManyRawResult<I>;
+export type GetOneRawResult<I extends Record<string, any> = Record<string, any>> = HasuraGraphQLResponse<{
+  readonly returning: readonly I[]
+}>;
+export type WatchOneRawResult<I extends Record<string, any> = Record<string, any>> = GetOneRawResult<I>;
+export type CreateRawResult<I extends Record<string, any> = Record<string, any>> = HasuraGraphQLResponse<{
+  readonly data: {
+    readonly returning: readonly I[]
+  }
+}>;
+export type UpdateRawResult<I extends Record<string, any> = Record<string, any>> = CreateRawResult<I>;
+export type DeleteRawResult<I extends Record<string, any> = Record<string, any>> = CreateRawResult<I>;
+export type UpdateManyRawResult<I extends Record<string, any> = Record<string, any>> = CreateRawResult<I>;
+export type DeleteManyRawResult<I extends Record<string, any> = Record<string, any>> = CreateRawResult<I>;
+
 export type WatchListParams = GetListParams;
 export type WatchOneParams = GetOneParams;
 export type WatchManyParams = GetManyParams;
@@ -53,6 +82,22 @@ export type WatchListResult = GetListResult;
 export type WatchOneResult = GetOneResult;
 export type WatchManyResult = GetManyResult;
 export type WatchManyReferenceResult = GetManyReferenceResult;
+
+export type ParseReponseInput
+  = GetListRawResult
+  | GetOneRawResult
+  | GetManyRawResult
+  | GetManyReferenceRawResult
+  | CreateRawResult
+  | UpdateRawResult
+  | UpdateManyRawResult
+  | DeleteRawResult
+  | DeleteManyRawResult
+  | WatchManyRawResult
+  | WatchListRawResult
+  | WatchOneRawResult
+  | WatchManyReferenceRawResult;
+
 export type ParseReponseResult
   = GetListResult
   | GetOneResult
@@ -71,65 +116,65 @@ export type ParseReponseResult
 export type HasuraIntrospectionOptions = IntrospectionOptions & {
   readonly operationNames: { [Op in HasuraFetchType]?: (type: IntrospectionType) => string }
 };
-export type ParseResponseFunction<R = ParseReponseResult> = (res: HasuraGraphQLResponse) => R;
+export type ParseResponseFunction<I = ParseReponseInput, R = ParseReponseResult> = (res: I) => R;
 
-export type CustomResourceActionOptions<PR = ParseReponseResult, TCache = unknown> = {
+export type CustomResourceActionOptions<I = ParseReponseInput, PR = ParseReponseResult, TCache = unknown> = {
   readonly client: ApolloClient<TCache>
-  readonly parseResponse: ParseResponseFunction<PR>
+  readonly parseResponse: ParseResponseFunction<I, PR>
 };
 
 export type CustomResourceActions = {
   readonly getList?: (
     params: GetListParams,
-    options: CustomResourceActionOptions<GetListResult>
+    options: CustomResourceActionOptions<GetListRawResult, GetListResult>
   ) => Promise<GetListResult>
   readonly getOne?: (
     params: GetOneParams,
-    options: CustomResourceActionOptions<GetOneResult>
+    options: CustomResourceActionOptions<GetOneRawResult, GetOneResult>
   ) => Promise<GetOneResult>
   readonly getMany?: (
     params: GetManyParams,
-    options: CustomResourceActionOptions<GetManyResult>
+    options: CustomResourceActionOptions<GetManyRawResult, GetManyResult>
   ) => Promise<GetManyResult>
   readonly getManyReference?: (
     params: GetManyReferenceParams,
-    options: CustomResourceActionOptions<GetManyReferenceResult>
+    options: CustomResourceActionOptions<GetManyReferenceRawResult, GetManyReferenceResult>
   ) => Promise<GetManyReferenceResult>
   readonly update?: (
     params: UpdateParams,
-    options: CustomResourceActionOptions<UpdateResult>
+    options: CustomResourceActionOptions<UpdateRawResult, UpdateResult>
   ) => Promise<UpdateResult>
   readonly updateMany?: (
     params: UpdateManyParams,
-    options: CustomResourceActionOptions<UpdateManyResult>
+    options: CustomResourceActionOptions<UpdateManyRawResult, UpdateManyResult>
   ) => Promise<UpdateManyResult>
   readonly create?: (
     params: CreateParams,
-    options: CustomResourceActionOptions<CreateResult>
+    options: CustomResourceActionOptions<CreateRawResult, CreateResult>
   ) => Promise<CreateResult>
   readonly delete?: (
     params: DeleteParams,
-    options: CustomResourceActionOptions<DeleteResult>
+    options: CustomResourceActionOptions<DeleteRawResult, DeleteResult>
   ) => Promise<DeleteResult>
   readonly deleteMany?: (
     params: DeleteManyParams,
-    options: CustomResourceActionOptions<DeleteManyResult>
+    options: CustomResourceActionOptions<DeleteManyRawResult, DeleteManyResult>
   ) => Promise<DeleteManyResult>
   readonly watchList?: (
     params: WatchListParams,
-    options: CustomResourceActionOptions<WatchListResult>
+    options: CustomResourceActionOptions<WatchListRawResult, WatchListResult>
   ) => Observable<WatchListResult>
   readonly watchOne?: (
     params: WatchOneParams,
-    options: CustomResourceActionOptions<WatchOneResult>
+    options: CustomResourceActionOptions<WatchOneRawResult, WatchOneResult>
   ) => Observable<WatchOneResult>
   readonly watchMany?: (
     params: WatchManyParams,
-    options: CustomResourceActionOptions<WatchManyResult>
+    options: CustomResourceActionOptions<WatchManyRawResult, WatchManyResult>
   ) => Observable<WatchManyResult>
   readonly watchManyReference?: (
     params: WatchManyReferenceParams,
-    options: CustomResourceActionOptions<WatchManyReferenceResult>
+    options: CustomResourceActionOptions<WatchManyReferenceRawResult, WatchManyReferenceResult>
   )=> Observable<WatchManyReferenceResult>
 };
 
