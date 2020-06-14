@@ -88,13 +88,13 @@ export const getFetchType = (actionType: string): HasuraFetchType | string => {
     case "delete":
       return DELETE;
     case "deleteMany":
-      return WATCH_LIST;
+      return DELETE_MANY;
     case "watchList":
-      return WATCH_ONE;
+      return WATCH_LIST;
     case "watchOne":
-      return DELETE_MANY;
+      return WATCH_ONE;
     case "watchMany":
-      return DELETE_MANY;
+      return WATCH_MANY;
     case "watchManyReference":
       return WATCH_MANY_REFERENCE;
 
