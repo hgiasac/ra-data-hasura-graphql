@@ -144,7 +144,10 @@ export default <Options extends Record<string, any> = Record<string, any>>(
       };
 
       return Object.keys(newDataProvider)
-        .map((key) => getAction(key));
+        .reduce((acc, key) => ({
+          ...acc,
+          [key]: getAction(key)
+        }), {});
     });
 
 const getOptions = (options, aorFetchType, resource): any => {
