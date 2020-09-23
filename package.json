@@ -1,6 +1,6 @@
 {
     "name": "ra-data-hasura-graphql",
-    "version": "0.1.10",
+    "version": "0.1.20",
     "description": "A data provider for connecting react-admin to a Hasura endpoint",
     "main": "lib/index.js",
     "types": "lib/index.d.ts",
